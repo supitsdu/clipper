@@ -24,6 +24,14 @@ linux:
 darwin:
 	GOOS=darwin GOARCH=amd64 go build -o $(OUT_DIR)/$(DARWIN_BIN)
 
+# Generate SHA256 checksums for each binary
+checksums:
+	@echo "Generating SHA256 checksums..."
+	@for binary in $(WINDOWS_BIN) $(LINUX_BIN) $(DARWIN_BIN); do \
+		sha256sum $(OUT_DIR)/$$binary > $(OUT_DIR)/$$binary.sha256; \
+	done
+	@echo "Checksum files generated successfully."
+
 # Clean the built binaries
 clean:
 	rm -rf $(OUT_DIR)
