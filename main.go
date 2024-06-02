@@ -9,7 +9,7 @@ import (
 	"github.com/atotto/clipboard"
 )
 
-const version = "1.1.0"
+const version = "1.2.0"
 
 func main() {
 	// Define flags
