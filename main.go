@@ -9,7 +9,7 @@ import (
 	"github.com/atotto/clipboard"
 )
 
-const version = "1.2.0"
+const version = "1.3.0"
 
 // copyToClipboard writes the content to the clipboard
 func copyToClipboard(contentStr string) error {
