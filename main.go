@@ -9,7 +9,30 @@ import (
 	"github.com/atotto/clipboard"
 )
 
-const version = "1.2.0"
+const version = "1.3.0"
+
+// copyToClipboard writes the content to the clipboard
+func copyToClipboard(contentStr string) error {
+	return clipboard.WriteAll(contentStr)
+}
+
+// readFromStdin reads content from stdin
+func readFromStdin() (string, error) {
+	input, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return "", fmt.Errorf("error reading from stdin: %v", err)
+	}
+	return string(input), nil
+}
+
+// readFromFile reads content from the specified file
+func readFromFile(filePath string) (string, error) {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", fmt.Errorf("error reading file '%s': %v", filePath, err)
+	}
+	return string(content), nil
+}
 
 func main() {
 	// Define flags
@@ -36,31 +59,28 @@ func main() {
 	}
 
 	var contentStr string
+	var err error
 
 	if *directText != "" {
 		// Use the provided direct text
 		contentStr = *directText
-	} else if len(flag.Args()) == 1 {
-		// Read the content from the file path provided
-		filePath := flag.Arg(0)
-		content, err := os.ReadFile(filePath)
-		if err != nil {
-			fmt.Printf("Error reading file '%s': %v\n", filePath, err)
-			os.Exit(1)
-		}
-		contentStr = string(content)
 	} else {
-		// Read from stdin
-		input, err := io.ReadAll(os.Stdin)
+		if len(flag.Args()) == 1 {
+			// Read the content from the file path provided
+			contentStr, err = readFromFile(flag.Arg(0))
+		} else {
+			// Read from stdin
+			contentStr, err = readFromStdin()
+		}
+
 		if err != nil {
-			fmt.Printf("Error reading from stdin: %v\n", err)
+			fmt.Printf("Error: %v\n", err)
 			os.Exit(1)
 		}
-		contentStr = string(input)
 	}
 
 	// Write the content to the clipboard
-	err := clipboard.WriteAll(contentStr)
+	err = copyToClipboard(contentStr)
 	if err != nil {
 		fmt.Printf("Error copying content to clipboard: %v\n", err)
 		os.Exit(1)
