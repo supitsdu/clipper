@@ -75,4 +75,9 @@ help:
 	@echo "  checksums    - Generate SHA256 checksums for binaries"
 	@echo "  test         - Run tests"
 	@echo "  clean        - Clean the built binaries"
+	@echo "  version      - Show the latest git tag version"
 	@echo "  help         - Show this help message"
+
+# Show the latest git tag version
+version:
+	@echo $(VERSION)
