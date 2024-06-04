@@ -8,6 +8,10 @@ import (
 )
 
 func TestCopyToClipboard(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping clipboard test in CI/CD.")
+	}
+
 	content := "Hello, World!"
 	err := copyToClipboard(content)
 	if err != nil {
@@ -73,6 +77,10 @@ func TestReadFromFile(t *testing.T) {
 }
 
 func TestCopyFromCommandLineArgument(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping clipboard test in CI/CD.")
+	}
+
 	content := "Command line text"
 	os.Args = []string{"clipper", "-c", content}
 
