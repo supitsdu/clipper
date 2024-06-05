@@ -11,7 +11,17 @@ Clipper is a lightweight command-line tool written in Go for copying contents to
 
 ## Installation
 
-To use Clipper, download the appropriate binary for your operating system from the [releases page](https://github.com/yourusername/clipper/releases) and place it in your desired location. Add the location of the binary to your system's PATH environment variable to access Clipper from anywhere on your system.
+### Using the Install Script
+
+You can install Clipper using the following command:
+
+```sh
+curl -sSL https://raw.githubusercontent.com/supitsdu/clipper/main/install.sh | sh
+```
+
+### Manual Installation
+
+To use Clipper, download the appropriate binary for your operating system from the [releases page](https://github.com/supitsdu/clipper/releases) and place it in your desired location. Add the location of the binary to your system's PATH environment variable to access Clipper from anywhere on your system.
 
 ## Usage
 
@@ -37,8 +47,8 @@ clipper -c "My awesome content!"
 
 Contributions to Clipper are welcome! Here are a few ways you can contribute:
 
-- **Report Bugs:** If you encounter any bugs or unexpected behavior while using Clipper, please [open an issue](https://github.com/yourusername/clipper/issues) on GitHub to report it.
-- **Request Features:** Have an idea for a new feature or improvement? [Open an issue](https://github.com/yourusername/clipper/issues) to share your suggestion and start a discussion.
+- **Report Bugs:** If you encounter any bugs or unexpected behavior while using Clipper, please [open an issue](https://github.com/supitsdu/clipper/issues) on GitHub to report it.
+- **Request Features:** Have an idea for a new feature or improvement? [Open an issue](https://github.com/supitsdu/clipper/issues) to share your suggestion and start a discussion.
 - **Submit Pull Requests:** If you're comfortable with Go programming, you can contribute directly to the development of Clipper by submitting pull requests. Fork the repository, make your changes, and submit a pull request for review.
 
 ## Building from Source
