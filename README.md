@@ -1,13 +1,13 @@
 # Clipper - Ready to Paste
 
-Clipper is a lightweight command-line tool written in Go for copying contents to the clipboard. Quickly and easily copy the contents of any file, commands output, or even directly pass a text to your clipboard inside your favorite terminal, streamlining your workflow and saving you time.
+Clipper is a lightweight command-line tool written in Go for copying contents to the clipboard. Quickly and easily copy the contents of any file, command output, or even directly pass text to your clipboard inside your favorite terminal, streamlining your workflow and saving you time.
 
 ## Features ✨
 
 - **Cross-Platform Compatibility:** Clipper works seamlessly on **Linux**, **macOS**, and **Windows**, providing consistent clipboard functionality across different operating systems.
 - **Simple Usage:** With a straightforward command-line interface, Clipper makes it easy to copy file contents to the clipboard with just a single command.
 - **Fast and Efficient:** Clipper is designed for performance and efficiency, allowing you to copy contents to the clipboard quickly and without unnecessary overhead.
-- **No External Dependencies:** Clipper is a standalone binary that doesn't rely on external libraries or tools, making it easy to install and use without any additional setup.
+- **Convenient:** Directly copy text, command output, or file contents to the clipboard in a consistent way across all supported platforms.
 
 ## Installation
 
@@ -16,8 +16,16 @@ Clipper is a lightweight command-line tool written in Go for copying contents to
 You can install Clipper using the following command:
 
 ```sh
-curl -sSL https://raw.githubusercontent.com/supitsdu/clipper/main/install.sh | sh
+curl -sSL https://raw.githubusercontent.com/supitsdu/clipper/main/install.sh | sh -c
 ```
+
+Or:
+
+```sh
+wget -qO- https://raw.githubusercontent.com/supitsdu/clipper/main/install.sh | sh
+```
+
+> Note: If you prefer not to use `curl ... | sh`, you can manually download and install Clipper as described below.
 
 ### Manual Installation
 
@@ -25,19 +33,19 @@ To use Clipper, download the appropriate binary for your operating system from t
 
 ## Usage
 
-Give the file path whose contents you want to copy to the clipboard. For example:
+Copy the contents of a file to the clipboard:
 
 ```sh
 clipper ~/.ssh/id_ed25519.pub
 ```
 
-You can also copy the output of any command:
+Copy the output of any command:
 
 ```sh
 go version | clipper
 ```
 
-Or even pass a text directly:
+Directly copy text:
 
 ```sh
 clipper -c "My awesome content!"
@@ -55,7 +63,7 @@ Contributions to Clipper are welcome! Here are a few ways you can contribute:
 
 To build Clipper from source, you'll need to have Go installed on your system, as well as the Make tool.
 
-### Requirements:
+### Requirements
 
 - **Go Lang:** Clipper is written in Go, so you'll need to have Go installed on your system. You can download and install it from the [official Go website](https://golang.org/).
 - **Make Tool:** Building Clipper from source requires the Make tool to automate the build process. Make is commonly pre-installed on Unix-like systems, but you may need to install it manually on Windows.
