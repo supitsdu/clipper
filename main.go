@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/atotto/clipboard"
 )
 
-const version = "1.3.0"
+const version = "1.4.0"
 
 // copyToClipboard writes the content to the clipboard
 func copyToClipboard(contentStr string) error {
@@ -43,7 +44,7 @@ func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Clipper is a lightweight command-line tool for copying contents to the clipboard.\n")
 		fmt.Fprintf(flag.CommandLine.Output(), "\nUsage:\n")
-		fmt.Fprintf(flag.CommandLine.Output(), "  clipper [arguments]\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "  clipper [arguments] [file ...]\n")
 		fmt.Fprintf(flag.CommandLine.Output(), "\nArguments:\n")
 		fmt.Fprintf(flag.CommandLine.Output(), "  -c <string>    Copy text directly from command line argument\n")
 		fmt.Fprintf(flag.CommandLine.Output(), "  -v             Show the current version of the clipper tool\n")
@@ -65,17 +66,25 @@ func main() {
 		// Use the provided direct text
 		contentStr = *directText
 	} else {
-		if len(flag.Args()) == 1 {
-			// Read the content from the file path provided
-			contentStr, err = readFromFile(flag.Arg(0))
+		if len(flag.Args()) > 0 {
+			// Read the content from all provided file paths
+			var sb strings.Builder
+			for _, filePath := range flag.Args() {
+				content, err := readFromFile(filePath)
+				if err != nil {
+					fmt.Printf("Error: %v\n", err)
+					os.Exit(1)
+				}
+				sb.WriteString(content + "\n")
+			}
+			contentStr = sb.String()
 		} else {
 			// Read from stdin
 			contentStr, err = readFromStdin()
-		}
-
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-			os.Exit(1)
+			if err != nil {
+				fmt.Printf("Error: %v\n", err)
+				os.Exit(1)
+			}
 		}
 	}
 
