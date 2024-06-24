@@ -35,6 +35,28 @@ func readFromFile(filePath string) (string, error) {
 	return string(content), nil
 }
 
+// parseContent determines the content string based on the flags and arguments
+func parseContent(directText *string, args []string) (string, error) {
+	if *directText != "" {
+		// Use the provided direct text
+		return *directText, nil
+	} else if len(args) > 0 {
+		// Read the content from all provided file paths
+		var sb strings.Builder
+		for _, filePath := range args {
+			content, err := readFromFile(filePath)
+			if err != nil {
+				return "", err
+			}
+			sb.WriteString(content + "\n")
+		}
+		return sb.String(), nil
+	} else {
+		// Read from stdin
+		return readFromStdin()
+	}
+}
+
 func main() {
 	// Define flags
 	directText := flag.String("c", "", "Copy text directly from command line argument")
@@ -59,33 +81,11 @@ func main() {
 		return
 	}
 
-	var contentStr string
-	var err error
-
-	if *directText != "" {
-		// Use the provided direct text
-		contentStr = *directText
-	} else {
-		if len(flag.Args()) > 0 {
-			// Read the content from all provided file paths
-			var sb strings.Builder
-			for _, filePath := range flag.Args() {
-				content, err := readFromFile(filePath)
-				if err != nil {
-					fmt.Printf("Error: %v\n", err)
-					os.Exit(1)
-				}
-				sb.WriteString(content + "\n")
-			}
-			contentStr = sb.String()
-		} else {
-			// Read from stdin
-			contentStr, err = readFromStdin()
-			if err != nil {
-				fmt.Printf("Error: %v\n", err)
-				os.Exit(1)
-			}
-		}
+	// Refactor the code to call parseContent and validate flag args
+	contentStr, err := parseContent(directText, flag.Args())
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
 	}
 
 	// Write the content to the clipboard
