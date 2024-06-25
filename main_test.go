@@ -95,3 +95,60 @@ func TestCopyFromCommandLineArgument(t *testing.T) {
 		t.Errorf("Expected %s but got %s", content, copied)
 	}
 }
+
+func TestParseContentDirectText(t *testing.T) {
+	directText := "Direct text input"
+	contentStr, err := parseContent(&directText, []string{})
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	if contentStr != directText {
+		t.Errorf("Expected contentStr to be '%s', got '%s'", directText, contentStr)
+	}
+}
+
+func TestParseContentStdin(t *testing.T) {
+	stdinInput := "Stdin input\n"
+	r, w, _ := os.Pipe()
+	originalStdin := os.Stdin
+	defer func() {
+		os.Stdin = originalStdin
+		r.Close()
+		w.Close()
+	}()
+	os.Stdin = r
+
+	// Write the input to the pipe
+	w.WriteString(stdinInput)
+	w.Close()
+
+	contentStr, err := parseContent(nil, []string{})
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	if contentStr != stdinInput {
+		t.Errorf("Expected contentStr to be '%s', got '%s'", stdinInput, contentStr)
+	}
+}
+
+func TestParseContentFromFile(t *testing.T) {
+	contentFromFile := "Content from file"
+	fakeFile := createTempFile(contentFromFile)
+	defer os.Remove(fakeFile.Name())
+
+	contentStr, err := parseContent(nil, []string{fakeFile.Name()})
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	if contentStr != contentFromFile+"\n" {
+		t.Errorf("Expected contentStr to be '%s', got '%s'", contentFromFile, contentStr)
+	}
+}
+
+// Helper function to create temporary file for testing
+func createTempFile(content string) *os.File {
+	file, _ := os.CreateTemp("", "testfile")
+	file.WriteString(content)
+	file.Close()
+	return file
+}
