@@ -37,24 +37,27 @@ func readFromFile(filePath string) (string, error) {
 
 // parseContent determines the content string based on the flags and arguments
 func parseContent(directText *string, args []string) (string, error) {
-	if *directText != "" {
+	if directText != nil && *directText != "" {
 		// Use the provided direct text
 		return *directText, nil
-	} else if len(args) > 0 {
-		// Read the content from all provided file paths
-		var sb strings.Builder
-		for _, filePath := range args {
-			content, err := readFromFile(filePath)
-			if err != nil {
-				return "", err
-			}
-			sb.WriteString(content + "\n")
-		}
-		return sb.String(), nil
-	} else {
+	}
+
+	if len(args) == 0 {
 		// Read from stdin
 		return readFromStdin()
 	}
+
+	// Read the content from all provided file paths
+	var sb strings.Builder
+	for _, filePath := range args {
+		content, err := readFromFile(filePath)
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(content + "\n")
+	}
+
+	return sb.String(), nil
 }
 
 func main() {
@@ -84,7 +87,7 @@ func main() {
 	// Refactor the code to call parseContent and validate flag args
 	contentStr, err := parseContent(directText, flag.Args())
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Printf("Error parsing content: %v\n", err)
 		os.Exit(1)
 	}
 
