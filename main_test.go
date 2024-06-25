@@ -193,6 +193,7 @@ func createTempFile(t *testing.T, content string) *os.File {
 
 // replaceStdin replaces os.Stdin with a pipe for testing purposes.
 func replaceStdin(t *testing.T) (*os.File, *os.File, func()) {
+t.Helper ()
     // Create a pipe
     r, w, err := os.Pipe()
     if err != nil {
