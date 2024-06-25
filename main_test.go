@@ -141,8 +141,7 @@ func TestParseContent_Stdin(t *testing.T) {
 	var directText *string
 
     // Replace stdin with a pipe for testing
-    _, w, cleanup := replaceStdin(t)
-    defer cleanup() // Ensure cleanup is called to restore the original stdin
+    _, w := replaceStdin(t)
 
     // Write content to the pipe and close it
     go func() {
@@ -210,7 +209,7 @@ t.Helper ()
 }
 
 // replaceStdin replaces os.Stdin with a pipe for testing purposes.
-func replaceStdin(t *testing.T) (*os.File, *os.File, func()) {
+func replaceStdin(t *testing.T) (*os.File, *os.File) {
 t.Helper ()
     // Create a pipe
     r, w, err := os.Pipe()
@@ -225,11 +224,11 @@ t.Helper ()
     os.Stdin = r
 
     // Cleanup function to restore the original stdin and close the pipe
-    cleanup := func() {
+    t.Cleanup(func() {
         os.Stdin = originalStdin
         r.Close()
         w.Close()
-    }
+    })
 
-    return r, w, cleanup
+    return r, w
 }
