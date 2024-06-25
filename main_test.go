@@ -176,6 +176,7 @@ func stringPtr(s string) *string {
 
 // createTempFile creates a temporary file for testing purposes and writes the given content to it.
 func createTempFile(t *testing.T, content string) *os.File {
+t.Helper ()
 	// Create a temporary file
 	file, err := os.CreateTemp(t.TempDir(), "testfile")
 	if err != nil {
