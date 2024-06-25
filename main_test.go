@@ -17,8 +17,11 @@ func TestParseContent_MultipleFiles(t *testing.T) {
 	// Expected result after parsing multiple files
 	expected := "Content from file 1\nContent from file 2\n"
 
+	// Define directText as nil since we are testing file paths only
+	var directText *string
+
 	// Execute the function under test
-	actual, err := parseContent(nil, []string{file1.Name(), file2.Name()})
+	actual, err := parseContent(directText, []string{file1.Name(), file2.Name()})
 	if err != nil {
 		t.Fatalf("TestParseContent_MultipleFiles: Expected no error, got %v", err)
 	}
@@ -37,8 +40,11 @@ func TestParseContent_EmptyFiles(t *testing.T) {
 	// Expected result when parsing an empty file
 	expected := "\n"
 
+	// Define directText as nil since we are testing file paths only
+	var directText *string
+
 	// Execute the function under test with the empty file
-	actual, err := parseContent(nil, []string{emptyFile.Name()})
+	actual, err := parseContent(directText, []string{emptyFile.Name()})
 	if err != nil {
 		t.Fatalf("TestParseContent_EmptyFiles: Expected no error, got %v", err)
 	}
@@ -54,8 +60,11 @@ func TestParseContent_EmptyInput(t *testing.T) {
 	// Expected result for empty input
 	expected := ""
 
+	// Define directText as nil since we are testing empty inputs only
+	var directText *string
+
 	// Execute the function under test with no input arguments
-	actual, err := parseContent(nil, []string{})
+	actual, err := parseContent(directText, []string{})
 	if err != nil {
 		t.Fatalf("TestParseContent_EmptyInput: Expected no error, got %v", err)
 	}
@@ -71,8 +80,11 @@ func TestParseContent_InvalidFilePath(t *testing.T) {
 	// Invalid file path that doesn't exist
 	invalidPath := "/invalid/path/to/file.txt"
 
+	// Define directText as nil since we are testing file paths only
+	var directText *string
+
 	// Execute the function under test with the invalid file path
-	_, err := parseContent(nil, []string{invalidPath})
+	_, err := parseContent(directText, []string{invalidPath})
 	if err == nil {
 		t.Fatalf("TestParseContent_InvalidFilePath: Expected an error, but got none")
 	}
@@ -87,8 +99,11 @@ func TestParseContent_LargeFile(t *testing.T) {
 	largeFile := createTempFile(t, largeContent)
 	expected := largeContent + "\n"
 
+	// Define directText as nil since we are testing file paths only
+	var directText *string
+
 	// Execute the function under test with the large file
-	actual, err := parseContent(nil, []string{largeFile.Name()})
+	actual, err := parseContent(directText, []string{largeFile.Name()})
 	if err != nil {
 		t.Fatalf("TestParseContent_LargeFile: Expected no error, got %v", err)
 	}
@@ -122,6 +137,8 @@ func TestParseContent_Stdin(t *testing.T) {
     // Stdin input content
     content := "Stdin input\n"
     expected := "Stdin input\n"
+	// Define directText as nil since we are testing stdin only
+	var directText *string
 
     // Replace stdin with a pipe for testing
     _, w, cleanup := replaceStdin(t)
@@ -137,7 +154,7 @@ func TestParseContent_Stdin(t *testing.T) {
     }()
 
     // Execute the function under test with stdin input
-    actual, err := parseContent(nil, []string{})
+    actual, err := parseContent(directText, []string{})
     if err != nil {
         t.Fatalf("TestParseContent_Stdin: Expected no error, got %v", err)
     }
