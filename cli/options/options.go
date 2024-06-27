@@ -11,7 +11,7 @@ type Config struct {
 	Args        []string
 }
 
-const Version = "1.4.0"
+const Version = "1.5.0"
 
 // ParseFlags parses the command-line flags and arguments.
 func ParseFlags() *Config {
