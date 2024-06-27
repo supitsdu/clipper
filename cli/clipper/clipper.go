@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/supitsdu/clipper/cli/options"
 	"github.com/atotto/clipboard"
+	"github.com/supitsdu/clipper/cli/options"
 )
 
 // ContentReader defines an interface for reading content from various sources.
@@ -77,7 +77,7 @@ func ParseContent(directText *string, readers ...ContentReader) (string, error) 
 }
 
 // Run executes the clipper tool logic based on the provided configuration.
-func Run(config *options.Config) {
+func Run(config *options.Config, writer ClipboardWriter) {
 	// Display the version if the flag is set.
 	if *config.ShowVersion {
 		fmt.Printf("Clipper %s\n", options.Version)
@@ -102,8 +102,7 @@ func Run(config *options.Config) {
 		os.Exit(1)
 	}
 
-	// Write the parsed content to the clipboard.
-	writer := DefaultClipboardWriter{}
+	// Write the parsed content to the provided clipboard.
 	if err = writer.Write(content); err != nil {
 		fmt.Printf("Error copying content to clipboard: %v\n", err)
 		os.Exit(1)
