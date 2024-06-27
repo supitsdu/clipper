@@ -7,5 +7,6 @@ import (
 
 func main() {
 	config := options.ParseFlags()
-	clipper.Run(config)
+	writer := clipper.DefaultClipboardWriter{} 
+	clipper.Run(config, writer)
 }
