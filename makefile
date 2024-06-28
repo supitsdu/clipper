@@ -20,27 +20,27 @@ all: windows linux linux_arm linux_arm64 darwin darwin_arm64
 
 # Build binary for Windows
 windows: $(OUT_DIR)
-	GOOS=windows GOARCH=amd64 go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(WINDOWS_BIN)
+	GOOS=windows GOARCH=amd64 go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(WINDOWS_BIN) ./cli
 
 # Build binary for Linux (amd64)
 linux: $(OUT_DIR)
-	GOOS=linux GOARCH=amd64 go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(LINUX_BIN)
+	GOOS=linux GOARCH=amd64 go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(LINUX_BIN) ./cli
 
 # Build binary for Linux (arm)
 linux_arm: $(OUT_DIR)
-	GOOS=linux GOARCH=arm go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(LINUX_ARM_BIN)
+	GOOS=linux GOARCH=arm go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(LINUX_ARM_BIN) ./cli
 
 # Build binary for Linux (arm64)
 linux_arm64: $(OUT_DIR)
-	GOOS=linux GOARCH=arm64 go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(LINUX_ARM64_BIN)
+	GOOS=linux GOARCH=arm64 go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(LINUX_ARM64_BIN) ./cli
 
 # Build binary for macOS (amd64)
 darwin: $(OUT_DIR)
-	GOOS=darwin GOARCH=amd64 go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(DARWIN_BIN)
+	GOOS=darwin GOARCH=amd64 go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(DARWIN_BIN) ./cli
 
 # Build binary for macOS (arm64)
 darwin_arm64: $(OUT_DIR)
-	GOOS=darwin GOARCH=arm64 go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(DARWIN_ARM64_BIN)
+	GOOS=darwin GOARCH=arm64 go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(DARWIN_ARM64_BIN) ./cli
 
 # Generate SHA256 checksums for each binary
 checksums: $(OUT_DIR)
