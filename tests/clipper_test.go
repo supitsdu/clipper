@@ -69,6 +69,10 @@ func TestContentReaders(t *testing.T) {
 
 func TestClipboardWriter(t *testing.T) {
 	t.Run("DefaultClipboardWriter", func(t *testing.T) {
+		if testing.Short() == true {
+			t.Skip("Skipping clipboard test in short mode. Helps avoid errors when on CI environments.")
+		}
+
 		// Create a DefaultClipboardWriter
 		writer := clipper.DefaultClipboardWriter{}
 
