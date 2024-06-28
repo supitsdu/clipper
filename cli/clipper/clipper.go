@@ -76,22 +76,27 @@ func ParseContent(directText *string, readers ...ContentReader) (string, error) 
 	return sb.String(), nil
 }
 
+func GetReaders(targets []string) []ContentReader {
+	if len(targets) == 0 {
+		// If no file paths are provided, use StdinContentReader to read from stdin.
+		return []ContentReader{StdinContentReader{}}
+	} else {
+		// If file paths are provided as arguments, create FileContentReader instances for each.
+		var readers []ContentReader
+		for _, filePath := range targets {
+			readers = append(readers, FileContentReader{FilePath: filePath})
+		}
+		return readers
+	}
+}
+
 // Run executes the clipper tool logic based on the provided configuration.
 func Run(config *options.Config, writer ClipboardWriter) (string, error) {
 	if *config.ShowVersion {
 		return options.Version, nil
 	}
 
-	var readers []ContentReader
-	if len(config.Args) > 0 {
-		// If file paths are provided as arguments, create FileContentReader instances for each.
-		for _, filePath := range config.Args {
-			readers = append(readers, FileContentReader{FilePath: filePath})
-		}
-	} else {
-		// If no file paths are provided, use StdinContentReader to read from stdin.
-		readers = append(readers, StdinContentReader{})
-	}
+	readers := GetReaders(config.Args)
 
 	// Aggregate the content from the provided sources.
 	content, err := ParseContent(config.DirectText, readers...)
