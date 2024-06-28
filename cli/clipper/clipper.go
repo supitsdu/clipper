@@ -29,7 +29,7 @@ type FileContentReader struct {
 func (f FileContentReader) Read() (string, error) {
 	content, err := os.ReadFile(f.FilePath)
 	if err != nil {
-		return "", fmt.Errorf("error reading file '%s': %v", f.FilePath, err)
+		return "", fmt.Errorf("error reading file '%s': %w", f.FilePath, err)
 	}
 	return string(content), nil
 }
@@ -41,7 +41,7 @@ type StdinContentReader struct{}
 func (s StdinContentReader) Read() (string, error) {
 	input, err := io.ReadAll(os.Stdin)
 	if err != nil {
-		return "", fmt.Errorf("error reading from stdin: %v", err)
+		return "", fmt.Errorf("error reading from stdin: %w", err)
 	}
 	return string(input), nil
 }
@@ -77,11 +77,9 @@ func ParseContent(directText *string, readers ...ContentReader) (string, error) 
 }
 
 // Run executes the clipper tool logic based on the provided configuration.
-func Run(config *options.Config, writer ClipboardWriter) {
-	// Display the version if the flag is set.
+func Run(config *options.Config, writer ClipboardWriter) (string, error) {
 	if *config.ShowVersion {
-		fmt.Printf("Clipper %s\n", options.Version)
-		return
+		return options.Version, nil
 	}
 
 	var readers []ContentReader
@@ -98,16 +96,13 @@ func Run(config *options.Config, writer ClipboardWriter) {
 	// Aggregate the content from the provided sources.
 	content, err := ParseContent(config.DirectText, readers...)
 	if err != nil {
-		fmt.Printf("Error parsing content: %v\n", err)
-		os.Exit(1)
+		return "", fmt.Errorf("parsing content: %w", err)
 	}
 
 	// Write the parsed content to the provided clipboard.
 	if err = writer.Write(content); err != nil {
-		fmt.Printf("Error copying content to clipboard: %v\n", err)
-		os.Exit(1)
+		return "", fmt.Errorf("copying content to clipboard: %w", err)
 	}
 
-	// Print success message.
-	fmt.Println("Clipboard updated successfully. Ready to paste!")
+	return "updated clipboard successfully. Ready to paste!", nil
 }
