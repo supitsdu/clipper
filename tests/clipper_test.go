@@ -6,7 +6,6 @@ import (
 
 	"github.com/atotto/clipboard"
 	"github.com/supitsdu/clipper/cli/clipper"
-
 	"github.com/xyproto/randomstring"
 )
 
