@@ -1,6 +1,7 @@
 package clipper
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -27,11 +28,13 @@ type FileContentReader struct {
 
 // Read reads the content from the file specified in FileContentReader.
 func (f FileContentReader) Read() (string, error) {
-	content, err := os.ReadFile(f.FilePath)
+	file, err := os.Open(f.FilePath)
 	if err != nil {
-		return "", fmt.Errorf("error reading file '%s': %w", f.FilePath, err)
+		return "", fmt.Errorf("error opening file '%s': %w", f.FilePath, err)
 	}
-	return string(content), nil
+	defer file.Close()
+
+	return ReadContent(bufio.NewReader(file))
 }
 
 // StdinContentReader reads content from the standard input (stdin).
@@ -39,11 +42,7 @@ type StdinContentReader struct{}
 
 // Read reads the content from stdin.
 func (s StdinContentReader) Read() (string, error) {
-	input, err := io.ReadAll(os.Stdin)
-	if err != nil {
-		return "", fmt.Errorf("error reading from stdin: %w", err)
-	}
-	return string(input), nil
+	return ReadContent(bufio.NewReader(os.Stdin))
 }
 
 // DefaultClipboardWriter writes content to the clipboard using the default clipboard implementation.
@@ -52,6 +51,23 @@ type DefaultClipboardWriter struct{}
 // Write writes the given content to the clipboard.
 func (c DefaultClipboardWriter) Write(content string) error {
 	return clipboard.WriteAll(content)
+}
+
+// readContent reads content from the provided bufio.Reader and returns it as a string.
+func ReadContent(reader *bufio.Reader) (string, error) {
+	var sb strings.Builder
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				sb.WriteString(line)
+				break
+			}
+			return "", fmt.Errorf("error reading content: %w", err)
+		}
+		sb.WriteString(line)
+	}
+	return sb.String(), nil
 }
 
 // ParseContent aggregates content from the provided readers, or returns the direct text if provided.
