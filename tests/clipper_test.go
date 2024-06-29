@@ -1,7 +1,9 @@
 package clipper
 
 import (
+	"bufio"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/atotto/clipboard"
@@ -92,6 +94,53 @@ func TestClipboardWriter(t *testing.T) {
 			t.Errorf("Expected '%s', got '%s'", mockTextContent, clipboardContent)
 		}
 	})
+}
+
+func TestReadContent(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		expected    string
+		expectError bool
+	}{
+		{
+			name:        "Single line content",
+			input:       "Hello, World!",
+			expected:    "Hello, World!",
+			expectError: false,
+		},
+		{
+			name:        "Multiple lines content",
+			input:       "Hello, World!\nThis is a test.",
+			expected:    "Hello, World!\nThis is a test.",
+			expectError: false,
+		},
+		{
+			name:        "Empty content",
+			input:       "",
+			expected:    "",
+			expectError: false,
+		},
+		{
+			name:        "Content with EOF error",
+			input:       "Hello, World!",
+			expected:    "Hello, World!",
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			reader := bufio.NewReader(strings.NewReader(tt.input))
+			output, err := clipper.ReadContent(reader)
+			if (err != nil) != tt.expectError {
+				t.Fatalf("ReadContent() error = %v, expectError %v", err, tt.expectError)
+			}
+			if output != tt.expected {
+				t.Errorf("ReadContent() = %v, want %v", output, tt.expected)
+			}
+		})
+	}
 }
 
 func TestParseContent(t *testing.T) {
