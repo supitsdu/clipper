@@ -104,7 +104,8 @@ func TestParseContent(t *testing.T) {
 		}
 
 		// Expected result when parsing an empty file
-		expected := "\n"
+		emptyString := ""
+		newlineString := "\n"
 
 		// Create a FileContentReader for the empty file
 		testReader := reader.FileContentReader{FilePath: emptyFile.Name()}
@@ -115,9 +116,12 @@ func TestParseContent(t *testing.T) {
 			t.Fatalf("Expected no error, got: %v", err)
 		}
 
-		// Verify the actual output matches the expected output
-		if actual != expected {
-			t.Errorf("Expected %s but got %s", expected, actual)
+		if actual != emptyString {
+			t.Error("When given an empty file returned something else.")
+		}
+
+		if actual == newlineString {
+			t.Error("When given empty file returned one with newline '\\n' character. See: https://github.com/supitsdu/clipper/issues/31#issue-2379691170")
 		}
 	})
 
