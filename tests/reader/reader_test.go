@@ -1,26 +1,23 @@
-package clipper
+package reader_test
 
 import (
-	"os"
 	"testing"
 
-	"github.com/atotto/clipboard"
-	"github.com/supitsdu/clipper/cli/clipper"
+	"github.com/supitsdu/clipper/cli/reader"
+	"github.com/supitsdu/clipper/tests"
 	"github.com/xyproto/randomstring"
 )
-
-const mockTextContent = "Mocking Bird! Just A Sample Text."
 
 func TestContentReaders(t *testing.T) {
 	t.Run("FileContentReader", func(t *testing.T) {
 		// Create a temporary file
-		file, err := createTempFile(t, mockTextContent)
+		file, err := tests.CreateTempFile(t, tests.SampleText_32)
 		if err != nil {
 			t.Fatalf("Failed to create temp file: %v", err)
 		}
 
 		// Create a FileContentReader
-		reader := clipper.FileContentReader{FilePath: file.Name()}
+		reader := reader.FileContentReader{FilePath: file.Name()}
 
 		// Read the content
 		readContent, err := reader.Read()
@@ -29,20 +26,20 @@ func TestContentReaders(t *testing.T) {
 		}
 
 		// Check the content
-		if readContent != mockTextContent {
-			t.Errorf("Expected '%s', got '%s'", mockTextContent, readContent)
+		if readContent != tests.SampleText_32 {
+			t.Errorf("Expected '%s', got '%s'", tests.SampleText_32, readContent)
 		}
 	})
 
 	t.Run("StdinContentReader", func(t *testing.T) {
 		// Create a StdinContentReader
-		reader := clipper.StdinContentReader{}
+		reader := reader.StdinContentReader{}
 
 		// Replace stdin with a pipe
-		_, w := replaceStdin(t)
+		_, w := tests.ReplaceStdin(t)
 
 		// Write some content to the pipe
-		_, err := w.WriteString(mockTextContent)
+		_, err := w.WriteString(tests.SampleText_32)
 		if err != nil {
 			t.Fatalf("Error writing to pipe: %v", err)
 		}
@@ -60,36 +57,8 @@ func TestContentReaders(t *testing.T) {
 		}
 
 		// Check the content
-		if readContent != mockTextContent {
-			t.Errorf("Expected '%s', got '%s'", mockTextContent, readContent)
-		}
-	})
-}
-
-func TestClipboardWriter(t *testing.T) {
-	t.Run("DefaultClipboardWriter", func(t *testing.T) {
-		if testing.Short() == true {
-			t.Skip("Skipping clipboard test in short mode. Helps avoid errors when on CI environments.")
-		}
-
-		// Create a DefaultClipboardWriter
-		writer := clipper.DefaultClipboardWriter{}
-
-		// Write some content to the clipboard
-		err := writer.Write(mockTextContent)
-		if err != nil {
-			t.Errorf("Error writing to clipboard: %v", err)
-		}
-
-		// Check the clipboard content
-		clipboardContent, err := clipboard.ReadAll()
-		if err != nil {
-			t.Errorf("Error reading from clipboard: %v", err)
-		}
-
-		// Check the content
-		if clipboardContent != mockTextContent {
-			t.Errorf("Expected '%s', got '%s'", mockTextContent, clipboardContent)
+		if readContent != tests.SampleText_32 {
+			t.Errorf("Expected '%s', got '%s'", tests.SampleText_32, readContent)
 		}
 	})
 }
@@ -99,11 +68,11 @@ func TestParseContent(t *testing.T) {
 		// Prepare test data with content from two files
 		content1 := "Content from file 1"
 		content2 := "Content from file 2"
-		file1, err := createTempFile(t, content1)
+		file1, err := tests.CreateTempFile(t, content1)
 		if err != nil {
 			t.Fatalf("Failed to create temp file: %v", err)
 		}
-		file2, err := createTempFile(t, content2)
+		file2, err := tests.CreateTempFile(t, content2)
 		if err != nil {
 			t.Fatalf("Failed to create temp file: %v", err)
 		}
@@ -112,11 +81,11 @@ func TestParseContent(t *testing.T) {
 		expected := "Content from file 1\nContent from file 2\n"
 
 		// Create FileContentReaders for the files
-		reader1 := clipper.FileContentReader{FilePath: file1.Name()}
-		reader2 := clipper.FileContentReader{FilePath: file2.Name()}
+		reader1 := reader.FileContentReader{FilePath: file1.Name()}
+		reader2 := reader.FileContentReader{FilePath: file2.Name()}
 
 		// Execute the function under test
-		actual, err := clipper.ParseContent(nil, reader1, reader2)
+		actual, err := reader.ParseContent(nil, reader1, reader2)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
 		}
@@ -129,7 +98,7 @@ func TestParseContent(t *testing.T) {
 
 	t.Run("EmptyFiles", func(t *testing.T) {
 		// Create an empty temporary file
-		emptyFile, err := createTempFile(t, "")
+		emptyFile, err := tests.CreateTempFile(t, "")
 		if err != nil {
 			t.Fatalf("Failed to create temp file: %v", err)
 		}
@@ -138,10 +107,10 @@ func TestParseContent(t *testing.T) {
 		expected := "\n"
 
 		// Create a FileContentReader for the empty file
-		reader := clipper.FileContentReader{FilePath: emptyFile.Name()}
+		testReader := reader.FileContentReader{FilePath: emptyFile.Name()}
 
 		// Execute the function under test with the empty file
-		actual, err := clipper.ParseContent(nil, reader)
+		actual, err := reader.ParseContent(nil, testReader)
 		if err != nil {
 			t.Fatalf("Expected no error, got: %v", err)
 		}
@@ -154,7 +123,7 @@ func TestParseContent(t *testing.T) {
 
 	t.Run("InvalidNilInput", func(t *testing.T) {
 		// Execute the function under test with no input arguments
-		_, err := clipper.ParseContent(nil)
+		_, err := reader.ParseContent(nil)
 		if err == nil {
 			t.Fatalf("Expected error, got %v", err)
 		}
@@ -165,10 +134,10 @@ func TestParseContent(t *testing.T) {
 		invalidPath := "/invalid/path/to/file.txt"
 
 		// Create a FileContentReader with the invalid file path
-		reader := clipper.FileContentReader{FilePath: invalidPath}
+		testReader := reader.FileContentReader{FilePath: invalidPath}
 
 		// Execute the function under test with the invalid file path
-		_, err := clipper.ParseContent(nil, reader)
+		_, err := reader.ParseContent(nil, testReader)
 		if err == nil {
 			t.Fatalf("Expected an error, but got none")
 		}
@@ -179,17 +148,17 @@ func TestParseContent(t *testing.T) {
 	t.Run("LargeFile", func(t *testing.T) {
 		// Create a large file (e.g., 10MB)
 		largeContent := randomstring.String(10 * 1024 * 1024) // 10MB of random data
-		largeFile, err := createTempFile(t, largeContent)
+		largeFile, err := tests.CreateTempFile(t, largeContent)
 		if err != nil {
 			t.Fatalf("Failed to create temp file: %v", err)
 		}
 		expected := largeContent + "\n"
 
 		// Create a FileContentReader for the large file
-		reader := clipper.FileContentReader{FilePath: largeFile.Name()}
+		testReader := reader.FileContentReader{FilePath: largeFile.Name()}
 
 		// Execute the function under test with the large file
-		actual, err := clipper.ParseContent(nil, reader)
+		actual, err := reader.ParseContent(nil, testReader)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
 		}
@@ -202,8 +171,8 @@ func TestParseContent(t *testing.T) {
 
 	t.Run("DirectText", func(t *testing.T) {
 		// Test with direct text
-		directText := mockTextContent
-		content, err := clipper.ParseContent(&directText)
+		directText := tests.SampleText_32
+		content, err := reader.ParseContent(&directText)
 		if err != nil {
 			t.Errorf("Error parsing content: %v", err)
 		}
@@ -214,62 +183,19 @@ func TestParseContent(t *testing.T) {
 
 	t.Run("FileContentReader", func(t *testing.T) {
 		// Test with a FileContentReader
-		tmpFile, err := createTempFile(t, mockTextContent)
+		tmpFile, err := tests.CreateTempFile(t, tests.SampleText_32)
 		if err != nil {
 			t.Fatalf("Failed to create temp file: %v", err)
 		}
 
-		reader := clipper.FileContentReader{FilePath: tmpFile.Name()}
+		testReader := reader.FileContentReader{FilePath: tmpFile.Name()}
 
-		content, err := clipper.ParseContent(nil, reader)
+		content, err := reader.ParseContent(nil, testReader)
 		if err != nil {
 			t.Errorf("Error parsing content: %v", err)
 		}
-		if content != (mockTextContent + "\n") {
-			t.Errorf("Expected '%s', got '%s'", mockTextContent, content)
+		if content != (tests.SampleText_32 + "\n") {
+			t.Errorf("Expected '%s', got '%s'", tests.SampleText_32, content)
 		}
 	})
-}
-
-// replaceStdin replaces os.Stdin with a pipe for testing purposes.
-func replaceStdin(t *testing.T) (*os.File, *os.File) {
-	t.Helper()
-	// Create a pipe
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Fatalf("replaceStdin: Failed to create pipe: %v", err)
-	}
-
-	// Save the original stdin
-	originalStdin := os.Stdin
-
-	// Replace stdin with the read end of the pipe
-	os.Stdin = r
-
-	// Cleanup function to restore the original stdin and close the pipe
-	t.Cleanup(func() {
-		os.Stdin = originalStdin
-		r.Close()
-		w.Close()
-	})
-
-	return r, w
-}
-
-// createTempFile creates a temporary file for testing purposes and writes the given content to it.
-func createTempFile(t *testing.T, content string) (*os.File, error) {
-	t.Helper()
-	// Create a temporary file
-	file, err := os.CreateTemp(t.TempDir(), "testfile")
-	if err != nil {
-		return nil, err
-	}
-
-	// Write the provided content to the temporary file
-	_, err = file.WriteString(content)
-	if err != nil {
-		return nil, err
-	}
-
-	return file, nil
 }
