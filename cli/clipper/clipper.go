@@ -21,13 +21,9 @@ func (c DefaultClipboardWriter) Write(content string) error {
 	return clipboard.WriteAll(content)
 }
 
-// Run executes the clipper tool logic based on the provided configuration.
+// Run executes the core logic of the Clipper tool.
 func Run(config *options.Config, writer ClipboardWriter) (string, error) {
-	if *config.ShowVersion {
-		return options.Version, nil
-	}
-
-	readers := reader.GetReaders(config.Args)
+	readers := reader.GetReaders(config.Args...)
 
 	// Aggregate the content from the provided sources.
 	content, err := reader.ParseContent(config.DirectText, readers...)
@@ -40,5 +36,5 @@ func Run(config *options.Config, writer ClipboardWriter) (string, error) {
 		return "", fmt.Errorf("copying content to clipboard: %w", err)
 	}
 
-	return "updated clipboard successfully. Ready to paste!", nil
+	return "Updated clipboard successfully. Ready to paste!", nil
 }

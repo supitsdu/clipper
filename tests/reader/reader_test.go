@@ -85,7 +85,7 @@ func TestParseContent(t *testing.T) {
 		reader2 := reader.FileContentReader{FilePath: file2.Name()}
 
 		// Execute the function under test
-		actual, err := reader.ParseContent(nil, reader1, reader2)
+		actual, err := reader.ParseContent("", reader1, reader2)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
 		}
@@ -111,7 +111,7 @@ func TestParseContent(t *testing.T) {
 		testReader := reader.FileContentReader{FilePath: emptyFile.Name()}
 
 		// Execute the function under test with the empty file
-		actual, err := reader.ParseContent(nil, testReader)
+		actual, err := reader.ParseContent("", testReader)
 		if err != nil {
 			t.Fatalf("Expected no error, got: %v", err)
 		}
@@ -127,7 +127,7 @@ func TestParseContent(t *testing.T) {
 
 	t.Run("InvalidNilInput", func(t *testing.T) {
 		// Execute the function under test with no input arguments
-		_, err := reader.ParseContent(nil)
+		_, err := reader.ParseContent("")
 		if err == nil {
 			t.Fatalf("Expected error, got %v", err)
 		}
@@ -141,7 +141,7 @@ func TestParseContent(t *testing.T) {
 		testReader := reader.FileContentReader{FilePath: invalidPath}
 
 		// Execute the function under test with the invalid file path
-		_, err := reader.ParseContent(nil, testReader)
+		_, err := reader.ParseContent("", testReader)
 		if err == nil {
 			t.Fatalf("Expected an error, but got none")
 		}
@@ -162,7 +162,7 @@ func TestParseContent(t *testing.T) {
 		testReader := reader.FileContentReader{FilePath: largeFile.Name()}
 
 		// Execute the function under test with the large file
-		actual, err := reader.ParseContent(nil, testReader)
+		actual, err := reader.ParseContent("", testReader)
 		if err != nil {
 			t.Fatalf("Expected no error, got %v", err)
 		}
@@ -176,7 +176,7 @@ func TestParseContent(t *testing.T) {
 	t.Run("DirectText", func(t *testing.T) {
 		// Test with direct text
 		directText := tests.SampleText_32
-		content, err := reader.ParseContent(&directText)
+		content, err := reader.ParseContent(directText)
 		if err != nil {
 			t.Errorf("Error parsing content: %v", err)
 		}
@@ -194,7 +194,7 @@ func TestParseContent(t *testing.T) {
 
 		testReader := reader.FileContentReader{FilePath: tmpFile.Name()}
 
-		content, err := reader.ParseContent(nil, testReader)
+		content, err := reader.ParseContent("", testReader)
 		if err != nil {
 			t.Errorf("Error parsing content: %v", err)
 		}
