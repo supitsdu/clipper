@@ -7,8 +7,8 @@ import (
 )
 
 type Config struct {
-	DirectText  *string
-	ShowVersion *bool
+	DirectText  string
+	ShowVersion bool
 	Args        []string
 }
 
@@ -45,8 +45,8 @@ func ParseFlags() *Config {
 	flag.Parse()
 
 	return &Config{
-		DirectText:  directText,
-		ShowVersion: showVersion,
+		DirectText:  *directText,
+		ShowVersion: *showVersion,
 		Args:        flag.Args(),
 	}
 }

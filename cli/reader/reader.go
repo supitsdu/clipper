@@ -43,7 +43,7 @@ func (s StdinContentReader) Read() (string, error) {
 
 // ReadContentConcurrently reads content from multiple readers concurrently and returns the results.
 // This function utilizes goroutines to perform concurrent reads, improving performance for multiple files.
-func ReadContentConcurrently(readers []ContentReader) ([]string, error) {
+func ReadContentConcurrently(readers ...ContentReader) ([]string, error) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	errChan := make(chan error, len(readers)) // Channel to capture errors
@@ -79,7 +79,7 @@ func ReadContentConcurrently(readers []ContentReader) ([]string, error) {
 
 // AggregateContent aggregates the content from the provided results and returns it as a single string.
 // It combines the content of all readers into a single string with newline separators.
-func AggregateContent(results []string) string {
+func AggregateContent(results ...string) string {
 	var sb strings.Builder
 	for _, content := range results {
 		if content != "" { // Ensure non-empty content is aggregated
@@ -91,26 +91,26 @@ func AggregateContent(results []string) string {
 
 // ParseContent aggregates content from the provided readers, or returns the direct text if provided.
 // This function first checks for direct text input, then reads from the provided readers concurrently.
-func ParseContent(directText *string, readers ...ContentReader) (string, error) {
-	if directText != nil && *directText != "" {
-		return *directText, nil // Return direct text if provided
+func ParseContent(directText string, readers ...ContentReader) (string, error) {
+	if directText != "" {
+		return directText, nil // Return direct text if provided
 	}
 
 	if len(readers) == 0 {
 		return "", fmt.Errorf("no content readers provided")
 	}
 
-	results, err := ReadContentConcurrently(readers) // Read content concurrently
+	results, err := ReadContentConcurrently(readers...) // Read content concurrently
 	if err != nil {
 		return "", err
 	}
 
-	return AggregateContent(results), nil // Aggregate and return the content
+	return AggregateContent(results...), nil // Aggregate and return the content
 }
 
 // GetReaders constructs the appropriate ContentReaders based on the provided file paths or lack thereof.
 // If no targets are provided, it defaults to using StdinContentReader.
-func GetReaders(targets []string) []ContentReader {
+func GetReaders(targets ...string) []ContentReader {
 	if len(targets) == 0 {
 		// If no file paths are provided, use StdinContentReader to read from stdin.
 		return []ContentReader{StdinContentReader{}}

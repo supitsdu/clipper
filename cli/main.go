@@ -11,7 +11,7 @@ import (
 func main() {
 	config := options.ParseFlags() // Parse command-line flags
 
-	if *config.ShowVersion {
+	if config.ShowVersion {
 		fmt.Printf("Clipper %s\n", options.GetVersion())
 		os.Exit(0)
 	}
