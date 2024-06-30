@@ -58,9 +58,12 @@ func ReadContentConcurrently(readers []ContentReader) ([]string, error) {
 				errChan <- err // Send error to channel
 				return
 			}
-			mu.Lock()
-			results[i] = content // Safely write to results slice
-			mu.Unlock()
+
+			if content != "" { // Check for empty content before writing to results
+				mu.Lock()
+				results[i] = content // Safely write to results slice
+				mu.Unlock()
+			}
 		}(i, reader)
 	}
 
@@ -79,7 +82,9 @@ func ReadContentConcurrently(readers []ContentReader) ([]string, error) {
 func AggregateContent(results []string) string {
 	var sb strings.Builder
 	for _, content := range results {
-		sb.WriteString(content + "\n")
+		if content != "" { // Ensure non-empty content is aggregated
+			sb.WriteString(content + "\n")
+		}
 	}
 	return sb.String()
 }
