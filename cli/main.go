@@ -9,17 +9,20 @@ import (
 )
 
 func main() {
-	config := options.ParseFlags()
-	writer := clipper.DefaultClipboardWriter{}
+	config := options.ParseFlags() // Parse command-line flags
 
-	msg, err := clipper.Run(config, writer)
-	if err != nil {
-		fmt.Printf("Error %s\n", err)
-		os.Exit(1)
-	}
-
-	if msg != "" {
-		fmt.Printf("Clipper %s\n", msg)
+	if *config.ShowVersion {
+		fmt.Printf("Clipper %s\n", options.GetVersion())
 		os.Exit(0)
 	}
+
+	writer := clipper.DefaultClipboardWriter{} // Create the default clipboard writer
+
+	msg, err := clipper.Run(config, writer) // Run the main Clipper logic
+	if err != nil {
+		fmt.Printf("Error %s\n", err)
+		os.Exit(1) // Exit with an error code
+	}
+
+	fmt.Println(msg)
 }

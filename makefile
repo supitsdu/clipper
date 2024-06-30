@@ -1,16 +1,12 @@
+# Makefile for building Clipper
+
 # Define the output directory for the binaries
 OUT_DIR := bin
 
-# Retrieve the version from git tags
-VERSION := $(shell git describe --tags --always)
+# Define version info (set dynamically during build)
+VERSION ?= $(shell git describe --tags --always)  # Get latest tag or commit hash as version
 
-# Define the names for the binaries with version
-WINDOWS_BIN := clipper_windows_amd64_$(VERSION).exe
-LINUX_BIN := clipper_linux_amd64_$(VERSION)
-LINUX_ARM_BIN := clipper_linux_arm_$(VERSION)
-LINUX_ARM64_BIN := clipper_linux_arm64_$(VERSION)
-DARWIN_BIN := clipper_darwin_amd64_$(VERSION)
-DARWIN_ARM64_BIN := clipper_darwin_arm64_$(VERSION)
+REPO_URL := github.com/supitsdu/clipper
 
 # Define the build targets for each platform
 .PHONY: all windows linux linux_arm linux_arm64 darwin darwin_arm64 clean checksums test help
@@ -18,29 +14,36 @@ DARWIN_ARM64_BIN := clipper_darwin_arm64_$(VERSION)
 # Default target: build binaries for all platforms
 all: windows linux linux_arm linux_arm64 darwin darwin_arm64
 
-# Build binary for Windows
+# Generic build function with simplified binary name and embedded metadata
+define build
+GOOS=$(1) GOARCH=$(2) go build \
+	-ldflags="-X '$(REPO_URL)/cli/options.Version=$(VERSION)' -X '$(REPO_URL)/cli/options.BuildMetadata=$(1)/$(2)'" \
+	-o $(OUT_DIR)/clipper_$(1)_$(2)_$(VERSION) ./cli
+endef
+
+# Build binaries for each platform, calling the generic build function with appropriate arguments
 windows: $(OUT_DIR)
-	GOOS=windows GOARCH=amd64 go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(WINDOWS_BIN) ./cli
+	$(call build,windows,amd64,windows)
 
 # Build binary for Linux (amd64)
 linux: $(OUT_DIR)
-	GOOS=linux GOARCH=amd64 go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(LINUX_BIN) ./cli
+	$(call build,linux,amd64,linux)
 
 # Build binary for Linux (arm)
 linux_arm: $(OUT_DIR)
-	GOOS=linux GOARCH=arm go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(LINUX_ARM_BIN) ./cli
+	$(call build,linux,arm,linux)
 
 # Build binary for Linux (arm64)
 linux_arm64: $(OUT_DIR)
-	GOOS=linux GOARCH=arm64 go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(LINUX_ARM64_BIN) ./cli
+	$(call build,linux,arm64,linux)
 
 # Build binary for macOS (amd64)
 darwin: $(OUT_DIR)
-	GOOS=darwin GOARCH=amd64 go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(DARWIN_BIN) ./cli
+	$(call build,darwin,amd64,darwin)
 
 # Build binary for macOS (arm64)
 darwin_arm64: $(OUT_DIR)
-	GOOS=darwin GOARCH=arm64 go build -ldflags="-X main.version=$(VERSION)" -o $(OUT_DIR)/$(DARWIN_ARM64_BIN) ./cli
+	$(call build,darwin,arm64,darwin)
 
 # Generate SHA256 checksums for each binary
 checksums: $(OUT_DIR)
