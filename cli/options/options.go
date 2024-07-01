@@ -3,13 +3,14 @@ package options
 import (
 	"flag"
 	"fmt"
+	"os"
 	"strings"
 )
 
 type Config struct {
-	DirectText  string
+	Text        string
 	ShowVersion bool
-	Args        []string
+	FilePaths   []string
 }
 
 // Package-level variables for version information (set at build time or default)
@@ -20,16 +21,18 @@ var (
 
 // GetVersion formats the version string for display
 func GetVersion() string {
+	versionStr := strings.TrimSpace(Version)
+
 	if BuildMetadata != "" {
-		return strings.TrimSpace(Version) + " " + strings.TrimSpace(BuildMetadata)
-	} else {
-		return strings.TrimSpace(Version)
+		versionStr += " " + strings.TrimSpace(BuildMetadata)
 	}
+
+	return versionStr
 }
 
 // ParseFlags parses the command-line flags and arguments.
 func ParseFlags() *Config {
-	directText := flag.String("c", "", "Copy text directly from command line argument")
+	text := flag.String("c", "", "Copy text directly from command line argument")
 	showVersion := flag.Bool("v", false, "Show the current version of the clipper tool")
 
 	flag.Usage = func() {
@@ -37,16 +40,17 @@ func ParseFlags() *Config {
 		fmt.Fprintf(flag.CommandLine.Output(), "\nUsage:\n")
 		fmt.Fprintf(flag.CommandLine.Output(), "  clipper [arguments] [file ...]\n")
 		fmt.Fprintf(flag.CommandLine.Output(), "\nArguments:\n")
-		fmt.Fprintf(flag.CommandLine.Output(), "  -c <string>    Copy text directly from command line argument\n")
-		fmt.Fprintf(flag.CommandLine.Output(), "  -v             Show the current version of the clipper tool\n")
+		flag.PrintDefaults()
 		fmt.Fprintf(flag.CommandLine.Output(), "\nIf no file or text is provided, reads from standard input.\n")
 	}
+
+	flag.CommandLine.SetOutput(os.Stderr)
 
 	flag.Parse()
 
 	return &Config{
-		DirectText:  *directText,
+		Text:        *text,
 		ShowVersion: *showVersion,
-		Args:        flag.Args(),
+		FilePaths:   flag.Args(),
 	}
 }
