@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/atotto/clipboard"
-	"github.com/supitsdu/clipper/cli/options"
 	"github.com/supitsdu/clipper/cli/reader"
 )
 
@@ -22,13 +21,11 @@ func (c DefaultClipboardWriter) Write(content string) error {
 }
 
 // Run executes the core logic of the Clipper tool.
-func Run(config *options.Config, writer ClipboardWriter) (string, error) {
-	readers := reader.GetReaders(config.FilePaths...)
-
+func Run(reader reader.ContentReader, writer ClipboardWriter) (string, error) {
 	// Aggregate the content from the provided sources.
-	content, err := reader.ParseContent(config.Text, readers...)
+	content, err := reader.ReadAll()
 	if err != nil {
-		return "", fmt.Errorf("parsing content: %w", err)
+		return "", err
 	}
 
 	// Write the parsed content to the provided clipboard.
