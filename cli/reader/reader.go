@@ -6,80 +6,84 @@ import (
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/gabriel-vasile/mimetype"
+	"github.com/supitsdu/clipper/cli/options"
 )
 
-// ContentReader defines an interface for reading content from various sources.
-type ContentReader interface {
-	Read() (string, error)
+// ContentReader is responsible for reading and processing content from files or standard input.
+type ContentReader struct {
+	Config *options.Config // Configuration options for content reading and formatting.
 }
 
-// FileContentReader reads content from a specified file path.
-type FileContentReader struct {
-	FilePath string
-}
+// ReadAll reads content from multiple files concurrently or from standard input if no files are specified.
+// It returns the aggregated content as a string.
+func (cr ContentReader) ReadAll() (string, error) {
+	paths := cr.Config.FilePaths
 
-// Read reads the content from the file specified in FileContentReader.
-// It reads the entire file content into memory, which is suitable for smaller files.
-func (f FileContentReader) Read() (string, error) {
-	content, err := os.ReadFile(f.FilePath)
-	if err != nil {
-		return "", fmt.Errorf("error reading file '%s': %w", f.FilePath, err)
+	if len(paths) == 0 { // Reads from standard input when
+		return cr.IOReader(os.Stdin, "")
 	}
-	return string(content), nil
-}
 
-// StdinContentReader reads content from the standard input (stdin).
-type StdinContentReader struct{}
-
-// Read reads the content from stdin.
-// It reads all the data from stdin until EOF, which is useful for piping input.
-func (s StdinContentReader) Read() (string, error) {
-	input, err := io.ReadAll(os.Stdin)
+	results, err := cr.ReadFilesAsync(paths)
 	if err != nil {
-		return "", fmt.Errorf("error reading from stdin: %w", err)
+		return "", err
 	}
-	return string(input), nil
+
+	return cr.JoinAll(results), nil
 }
 
-// ReadContentConcurrently reads content from multiple readers concurrently and returns the results.
-// This function utilizes goroutines to perform concurrent reads, improving performance for multiple files.
-func ReadContentConcurrently(readers ...ContentReader) ([]string, error) {
+// ReadFilesAsync reads content from multiple files concurrently using goroutines.
+// It returns a slice of strings containing the content of each file and an error if any file reading fails.
+func (cr ContentReader) ReadFilesAsync(paths []string) ([]string, error) {
+	errChan := make(chan error, len(paths)) // Channel to capture errors
+	results := make([]string, len(paths))   // Slice to store results
+
 	var wg sync.WaitGroup
 	var mu sync.Mutex
-	errChan := make(chan error, len(readers)) // Channel to capture errors
-	results := make([]string, len(readers))   // Slice to store results
 
-	for i, reader := range readers {
+	for i, filepath := range paths {
 		wg.Add(1)
-		go func(i int, reader ContentReader) {
+
+		go func(i int, filepath string) { // Goroutine to read a single file.
 			defer wg.Done()
-			content, err := reader.Read()
+			content, err := cr.ReadFile(filepath)
+
+			mu.Lock()
+			defer mu.Unlock() // Ensure safe concurrent access to 'results'.
+
 			if err != nil {
-				errChan <- err // Send error to channel
+				errChan <- fmt.Errorf("error reading file '%s': %w", filepath, err)
 				return
 			}
 
-			if content != "" { // Check for empty content before writing to results
-				mu.Lock()
-				results[i] = content // Safely write to results slice
-				mu.Unlock()
-			}
-		}(i, reader)
+			results[i] = content // Store the content in the results slice.
+		}(i, filepath)
 	}
 
-	wg.Wait()
-	close(errChan) // Close error channel after all reads are done
+	go func() {
+		wg.Wait() // Wait for all reading goroutines to complete
+		close(errChan)
+	}()
 
-	if len(errChan) > 0 {
-		return nil, <-errChan // Return the first error encountered
+	// Collect errors if any
+	var err error
+	for e := range errChan {
+		if err == nil {
+			err = e
+		}
+	}
+
+	if err != nil {
+		return nil, err
 	}
 
 	return results, nil
 }
 
-// AggregateContent aggregates the content from the provided results and returns it as a single string.
+// JoinAll aggregates the content from the provided results and returns it as a single string.
 // It combines the content of all readers into a single string with newline separators.
-func AggregateContent(results ...string) string {
+func (cr ContentReader) JoinAll(results []string) string {
 	var sb strings.Builder
 	for _, content := range results {
 		if content != "" { // Ensure non-empty content is aggregated
@@ -89,37 +93,101 @@ func AggregateContent(results ...string) string {
 	return sb.String()
 }
 
-// ParseContent aggregates content from the provided readers, or returns the direct text if provided.
-// This function first checks for direct text input, then reads from the provided readers concurrently.
-func ParseContent(directText string, readers ...ContentReader) (string, error) {
-	if directText != "" {
-		return directText, nil // Return direct text if provided
+// ReadFile reads and formats content from a single file.
+// It returns the formatted content as a string and an error if the file cannot be read or formatted.
+func (cr ContentReader) ReadFile(filepath string) (string, error) {
+	if err := cr.Readable(filepath); err != nil {
+		return "", err
 	}
 
-	if len(readers) == 0 {
-		return "", fmt.Errorf("no content readers provided")
-	}
-
-	results, err := ReadContentConcurrently(readers...) // Read content concurrently
+	file, err := os.Open(filepath)
 	if err != nil {
 		return "", err
 	}
 
-	return AggregateContent(results...), nil // Aggregate and return the content
+	defer file.Close()
+
+	return cr.IOReader(file, filepath)
 }
 
-// GetReaders constructs the appropriate ContentReaders based on the provided file paths or lack thereof.
-// If no targets are provided, it defaults to using StdinContentReader.
-func GetReaders(targets ...string) []ContentReader {
-	if len(targets) == 0 {
-		// If no file paths are provided, use StdinContentReader to read from stdin.
-		return []ContentReader{StdinContentReader{}}
+// Readable checks if a file path exists, is a regular file, and has read permissions.
+// It returns an error if the file is not accessible or readable.
+func (cr ContentReader) Readable(filePath string) error {
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		// File doesn't exist or can't be accessed
+		return fmt.Errorf("file does not exist or can't be accessed")
 	}
 
-	// Create FileContentReader instances for each provided file path.
-	var readers []ContentReader
-	for _, filePath := range targets {
-		readers = append(readers, FileContentReader{FilePath: filePath})
+	// Check if it's a regular file (crot a directory or other type)
+	if !fileInfo.Mode().IsRegular() {
+		return fmt.Errorf("path is not of a regular file, perhaps a directory or other type")
 	}
-	return readers
+
+	// Check if it's readable
+	if fileInfo.Mode().Perm()&0400 == 0 { // 0400 corresponds to read permission
+		return fmt.Errorf("you don't have access to read the file")
+	}
+
+	return nil
+}
+
+// IOReader reads content from an io.Reader (e.g., a file or stdin).
+// It returns the content as a string and an error if reading fails.
+func (cr ContentReader) IOReader(source io.Reader, filepath string) (string, error) {
+	data, err := io.ReadAll(source)
+	if err != nil {
+		return "", err
+	}
+
+	return cr.CreateContent(filepath, data)
+}
+
+// CreateContent creates a formatted string from raw data and applies formatting based on the configuration.
+func (cr ContentReader) CreateContent(filepath string, data []byte) (string, error) {
+	if !cr.Config.ShouldFormat {
+		return string(data), nil
+	}
+
+	return cr.Format(filepath, data)
+}
+
+// Format formats the content based on configuration options (HTML, Markdown, MimeType).
+// It returns the formatted content as a string and an error if formatting fails.
+func (cr ContentReader) Format(filepath string, data []byte) (string, error) {
+	var sb strings.Builder
+
+	mime := mimetype.Detect(data)
+	mimeType := mime.String()
+	content := string(data)
+
+	if filepath == "" {
+		filepath = "standard input"
+	}
+
+	if cr.Config.MimeType {
+		mimeType := fmt.Sprintf("%s (%s)\n", filepath, mimeType)
+
+		if cr.Config.Html || cr.Config.Markdown {
+			sb.WriteString("<!--\n" + mimeType + "-->\n")
+		} else {
+			sb.WriteString(mimeType)
+		}
+	}
+
+	if cr.Config.Html {
+		sb.WriteString(fmt.Sprintf("<code>\n%s\n</code>", content))
+	} else if cr.Config.Markdown {
+		sb.WriteString(fmt.Sprintf("```\n%s\n```", content))
+	} else if cr.Config.LineNumbers {
+		lines := strings.Split(content, "\n")
+
+		for i, line := range lines {
+			sb.WriteString(fmt.Sprintf("%d: %s\n", i+1, line))
+		}
+	} else {
+		sb.WriteString(content)
+	}
+
+	return sb.String(), nil
 }
