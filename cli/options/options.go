@@ -8,9 +8,14 @@ import (
 )
 
 type Config struct {
-	Text        string
-	ShowVersion bool
-	FilePaths   []string
+	Text         string
+	FilePaths    []string
+	Html         bool
+	Markdown     bool
+	MimeType     bool
+	LineNumbers  bool
+	ShouldFormat bool
+	ShowVersion  bool
 }
 
 // Package-level variables for version information (set at build time or default)
@@ -33,6 +38,10 @@ func GetVersion() string {
 // ParseFlags parses the command-line flags and arguments.
 func ParseFlags() *Config {
 	text := flag.String("c", "", "Copy text directly from command line argument")
+	htmlWrap := flag.Bool("Html", false, "Each file data is put within an HTML5 codeblock.")
+	markdownWrap := flag.Bool("Markdown", false, "Each file data is put within an Markdown codeblock.")
+	mimeType := flag.Bool("Mime", false, "Include mimetype for each file")
+	lineNumbers := flag.Bool("LineNumbers", false, "Add line numbers to the content.")
 	showVersion := flag.Bool("v", false, "Show the current version of the clipper tool")
 
 	flag.Usage = func() {
@@ -49,8 +58,13 @@ func ParseFlags() *Config {
 	flag.Parse()
 
 	return &Config{
-		Text:        *text,
-		ShowVersion: *showVersion,
-		FilePaths:   flag.Args(),
+		Text:         *text,
+		FilePaths:    flag.Args(),
+		Html:         *htmlWrap,
+		Markdown:     *markdownWrap,
+		MimeType:     *mimeType,
+		LineNumbers:  *lineNumbers,
+		ShowVersion:  *showVersion,
+		ShouldFormat: *htmlWrap || *mimeType || *markdownWrap || *lineNumbers,
 	}
 }
