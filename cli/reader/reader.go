@@ -17,26 +17,29 @@ type ContentReader struct {
 }
 
 // ReadAll reads content from multiple files concurrently or from standard input if no files are specified.
-// It returns the aggregated content as a string.
+// It returns the aggregated content as a single string.
 func (cr ContentReader) ReadAll() (string, error) {
 	paths := cr.Config.FilePaths
 
-	if len(paths) == 0 { // Reads from standard input when
+	// If no file paths are specified, read from standard input.
+	if len(paths) == 0 {
 		return cr.IOReader(os.Stdin, "")
 	}
 
+	// Read content from all specified files concurrently.
 	results, err := cr.ReadFilesAsync(paths)
 	if err != nil {
 		return "", err
 	}
 
+	// Join all results into a single string.
 	return cr.JoinAll(results), nil
 }
 
 // ReadFilesAsync reads content from multiple files concurrently using goroutines.
 // It returns a slice of strings containing the content of each file and an error if any file reading fails.
 func (cr ContentReader) ReadFilesAsync(paths []string) ([]string, error) {
-	errChan := make(chan error, len(paths)) // Channel to capture errors
+	errChan := make(chan error, len(paths)) // Channel to capture errors from goroutines
 	results := make([]string, len(paths))   // Slice to store results
 
 	var wg sync.WaitGroup
@@ -49,24 +52,24 @@ func (cr ContentReader) ReadFilesAsync(paths []string) ([]string, error) {
 			defer wg.Done()
 			content, err := cr.ReadFile(filepath)
 
-			mu.Lock()
-			defer mu.Unlock() // Ensure safe concurrent access to 'results'.
-
 			if err != nil {
+				// Send the error to the error channel and return early.
 				errChan <- fmt.Errorf("error reading file '%s': %w", filepath, err)
 				return
 			}
 
+			mu.Lock()
+			defer mu.Unlock()    // Ensure safe concurrent access to 'results'.
 			results[i] = content // Store the content in the results slice.
 		}(i, filepath)
 	}
 
 	go func() {
-		wg.Wait() // Wait for all reading goroutines to complete
+		wg.Wait() // Wait for all reading goroutines to complete.
 		close(errChan)
 	}()
 
-	// Collect errors if any
+	// Collect the first error encountered if any.
 	var err error
 	for e := range errChan {
 		if err == nil {
@@ -86,7 +89,7 @@ func (cr ContentReader) ReadFilesAsync(paths []string) ([]string, error) {
 func (cr ContentReader) JoinAll(results []string) string {
 	var sb strings.Builder
 	for _, content := range results {
-		if content != "" { // Ensure non-empty content is aggregated
+		if content != "" { // Ensure non-empty content is aggregated.
 			sb.WriteString(content + "\n")
 		}
 	}
@@ -115,17 +118,17 @@ func (cr ContentReader) ReadFile(filepath string) (string, error) {
 func (cr ContentReader) Readable(filePath string) error {
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
-		// File doesn't exist or can't be accessed
+		// File doesn't exist or can't be accessed.
 		return fmt.Errorf("file does not exist or can't be accessed")
 	}
 
-	// Check if it's a regular file (crot a directory or other type)
+	// Check if it's a regular file (not a directory or other type).
 	if !fileInfo.Mode().IsRegular() {
 		return fmt.Errorf("path is not of a regular file, perhaps a directory or other type")
 	}
 
-	// Check if it's readable
-	if fileInfo.Mode().Perm()&0400 == 0 { // 0400 corresponds to read permission
+	// Check if it's readable.
+	if fileInfo.Mode().Perm()&0400 == 0 { // 0400 corresponds to read permission.
 		return fmt.Errorf("you don't have access to read the file")
 	}
 
@@ -145,6 +148,7 @@ func (cr ContentReader) IOReader(source io.Reader, filepath string) (string, err
 
 // CreateContent creates a formatted string from raw data and applies formatting based on the configuration.
 func (cr ContentReader) CreateContent(filepath string, data []byte) (string, error) {
+	// If no formatting is required, return the raw data as a string.
 	if !cr.Config.ShouldFormat {
 		return string(data), nil
 	}
@@ -165,6 +169,7 @@ func (cr ContentReader) Format(filepath string, data []byte) (string, error) {
 		filepath = "standard input"
 	}
 
+	// Append MIME type information if required.
 	if cr.Config.MimeType {
 		mimeType := fmt.Sprintf("%s (%s)\n", filepath, mimeType)
 
@@ -175,6 +180,7 @@ func (cr ContentReader) Format(filepath string, data []byte) (string, error) {
 		}
 	}
 
+	// Format the content based on the configuration.
 	if cr.Config.Html {
 		sb.WriteString(fmt.Sprintf("<code>\n%s\n</code>", content))
 	} else if cr.Config.Markdown {
