@@ -76,6 +76,7 @@ func TestIOReader(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, data, result)
 }
+
 func TestCreateContent(t *testing.T) {
 	t.Run("Without Content Formats", func(tt *testing.T) {
 		config := &options.Config{ShouldFormat: false}
@@ -109,12 +110,25 @@ func TestCreateContent(t *testing.T) {
 }
 
 func TestJoinAll(t *testing.T) {
-	config := &options.Config{}
-	contentReader := reader.ContentReader{Config: config}
+	t.Run("join contents with a new line", func(tt *testing.T) {
+		config := &options.Config{}
+		contentReader := reader.ContentReader{Config: config}
 
-	results := []string{"content1", "content2", "content3"}
-	expected := "content1\ncontent2\ncontent3\n"
-	result := contentReader.JoinAll(results)
+		results := []string{"content1", "content2", "content3"}
+		expected := "content1\ncontent2\ncontent3\n"
+		result := contentReader.JoinAll(results)
 
-	assert.Equal(t, expected, result)
+		assert.Equal(tt, expected, result)
+	})
+
+	t.Run("ignore empty contents", func(tt *testing.T) {
+		config := &options.Config{}
+		contentReader := reader.ContentReader{Config: config}
+
+		results := []string{"", "content2", ""}
+		expected := "content2\n"
+		result := contentReader.JoinAll(results)
+
+		assert.Equal(tt, expected, result)
+	})
 }
