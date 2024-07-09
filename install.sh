@@ -1,243 +1,289 @@
 #!/bin/sh
+# The install script for Clipper made by @supitsdu
+# Any copyright is dedicated to the Public Domain.
+# https://creativecommons.org/publicdomain/zero/1.0/
 
-# Determine OS and Architecture
-OS=$(uname -s)
-ARCH=$(uname -m)
+# --- Constants & Configuration ---
+BINARY_DIR="/usr/local/bin"
+GITHUB_REPO="supitsdu/clipper"
 
-# Check if necessary tools are available
-check_commands() {
-    for cmd in "$@"; do
-        if ! command -v "$cmd" >/dev/null 2>&1; then
-            echo "Error: $cmd is required but not installed."
-            exit 1
-        fi
-    done
+# ANSI Escape Codes for Colors and Styling
+COLOR_RESET="\033[0m"
+COLOR_DARK="\033[2m"
+COLOR_RED="\033[31m"
+COLOR_GREEN="\033[32m"
+COLOR_BLUE="\033[34m"
+COLOR_YELLOW="\033[33m"
+STYLE_BOLD="\033[1m"
+
+# --- Helper Functions ---
+
+# Print colored/styled messages
+log() {
+    color="$1"
+    shift
+    printf "%b%b${COLOR_RESET}\n" "$color" "$@"
 }
 
-check_commands curl sudo
-
-# Create a temporary directory for downloading the binary
-TMP_DIR=$(mktemp -d)
-TMP_BINARY="$TMP_DIR/clipper"
-
-# Function to get the latest release version from GitHub
+# Get the latest release version from GitHub
 get_latest_version() {
-    LATEST_VERSION=$(curl -s https://api.github.com/repos/supitsdu/clipper/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
-    if [ -z "$LATEST_VERSION" ]; then
-        echo "Error: Failed to fetch the latest version."
-        exit 1
-    fi
+    case "$GCMD" in
+    "curl")
+        curl -s "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" |
+            grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/'
+        ;;
+    "wget")
+        wget -qO- "https://api.github.com/repos/${GITHUB_REPO}/releases/latest" |
+            grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/'
+        ;;
+    esac
 }
 
-# Function to check if Clipper is installed and get its version
+# Check if Clipper is installed and get its version
 get_installed_version() {
-    if ! command -v clipper >/dev/null 2>&1; then
-        INSTALLED_VERSION="" # Not installed
-    else
-        INSTALLED_VERSION=$(clipper -v)
-    fi
+    clipper -v 2>/dev/null | sed -E 's/.*\sv([^"]+)\s.*/\1/' || true # Silently handle 'command not found'
 }
 
-# Function to compare versions
+# Compare semantic versions (v1.2.3)
 is_newer_version() {
-    [ "$(printf "%s\n%s\n" "$1" "$2" | sort -V | sed -n '2p')" != "$2" ]
+    latest="$1"
+    installed="$2"
+    [ "$(printf "%s\n%s\n" "$latest" "$installed" | sort -V | sed -n '2p')" != "$installed" ]
 }
 
-# Function to set the download URL based on OS and Architecture
+# Set the download URL based on OS and Architecture
 set_binary_url() {
-    if [ -z "$LATEST_VERSION" ]; then
-        echo "Error: Latest version not fetched yet. Cannot set binary URL."
+    if [ -z "$latest_version" ]; then
+        log "$COLOR_RED" "Failed to fetch the latest version. Cannot set binary URL."
         exit 1
     fi
 
-    case "$OS" in
+    os=$(uname -s)
+    arch=$(uname -m)
+
+    case "$os" in
     "Linux")
-        case "$ARCH" in
+        case "$arch" in
         "x86_64")
-            BINARY_URL="https://github.com/supitsdu/clipper/releases/download/v$LATEST_VERSION/clipper_linux_amd64_v$LATEST_VERSION"
+            echo "https://github.com/${GITHUB_REPO}/releases/download/v$latest_version/clipper_linux_amd64_v$latest_version"
+            ;;
+        "arm")
+            echo "https://github.com/${GITHUB_REPO}/releases/download/v$latest_version/clipper_linux_arm_v$latest_version"
             ;;
         "aarch64" | "arm64")
-            BINARY_URL="https://github.com/supitsdu/clipper/releases/download/v$LATEST_VERSION/clipper_linux_arm64_v$LATEST_VERSION"
+            echo "https://github.com/${GITHUB_REPO}/releases/download/v$latest_version/clipper_linux_arm64_v$latest_version"
             ;;
         *)
-            echo "Error: Unsupported architecture: $ARCH"
+            log "$COLOR_RED" "Unsupported architecture: $arch"
             exit 1
             ;;
         esac
         ;;
     "Darwin")
-        case "$ARCH" in
+        case "$arch" in
         "x86_64")
-            BINARY_URL="https://github.com/supitsdu/clipper/releases/download/v$LATEST_VERSION/clipper_darwin_amd64_v$LATEST_VERSION"
+            echo "https://github.com/${GITHUB_REPO}/releases/download/v$latest_version/clipper_darwin_amd64_v$latest_version"
             ;;
         "arm64")
-            BINARY_URL="https://github.com/supitsdu/clipper/releases/download/v$LATEST_VERSION/clipper_darwin_arm64_v$LATEST_VERSION"
+            echo "https://github.com/${GITHUB_REPO}/releases/download/v$latest_version/clipper_darwin_arm64_v$latest_version"
             ;;
         *)
-            echo "Error: Unsupported architecture: $ARCH"
+            log "$COLOR_RED" "Unsupported architecture: $arch"
             exit 1
             ;;
         esac
         ;;
     *)
-        echo "Error: Unsupported OS: $OS"
+        log "$COLOR_RED" "Unsupported OS: $os"
         exit 1
         ;;
     esac
 }
 
-# Function to download the binary
+# Download the binary to a temporary location
 download_binary() {
-    echo "Downloading latest Clipper release from GitHub..."
-    if ! curl -Lo "$TMP_BINARY" "$BINARY_URL"; then
-        echo "Error: Failed to download Clipper."
-        cleanup
-        exit 1
-    fi
-    echo "Download completed."
-}
-
-# Function to make the binary executable
-make_executable() {
-    if ! chmod +x "$TMP_BINARY"; then
-        echo "Error: Failed to make Clipper executable."
-        cleanup
-        exit 1
-    fi
-}
-
-# Function to move the binary to /usr/local/bin
-install_binary() {
-    if [ -d "/usr/local/bin" ] && echo "$PATH" | grep -q "/usr/local/bin"; then
-        echo "Installing Clipper to /usr/local/bin..."
-        if ! sudo mv -f "$TMP_BINARY" /usr/local/bin/clipper; then
-            echo "Error: Failed to move Clipper to /usr/local/bin."
+    url=$1
+    case "$GCMD" in
+    "curl")
+        curl -#L --fail -o "$TMP_BINARY" "$url" || {
             cleanup
+            log "$COLOR_RED" "Failed to download Clipper."
             exit 1
-        fi
-    else
-        echo "Error: Directory /usr/local/bin does not exist or is not in your PATH."
-        cleanup
-        exit 1
-    fi
-}
-
-# Function to verify the installation
-verify_installation() {
-    if command -v clipper >/dev/null 2>&1; then
-        echo "Nice! Your $(clipper -v) was installed successfully!"
-    else
-        echo "Error: Installation failed."
-        cleanup
-        exit 1
-    fi
-}
-
-# Function to prompt user for confirmation
-user_input() {
-    echo "$1"
-    while true; do
-        printf "Do you want to %s? (Y/n): " "$2"
-        read -r confirm
-        case "$confirm" in
-        [Yy]* | '' | ' ') break ;;
-        [Nn]*) exit 0 ;;
-        *) echo "Invalid input. Please enter 'y' or 'n'." ;;
-        esac
-    done
-}
-
-# Function to uninstall Clipper
-uninstall() {
-    if command -v clipper >/dev/null 2>&1; then
-        echo "Uninstalling $(clipper -v)..."
-        if ! sudo rm -vf "$(command -v clipper)"; then
-            echo "Failed to uninstall."
+        }
+        ;;
+    "wget")
+        wget --show-progress -qO "$TMP_BINARY" "$url" || {
+            cleanup
+            log "$COLOR_RED" "Failed to download Clipper."
             exit 1
-        fi
-        cleanup
-        echo "Done."
-        exit 0
-    else
-        echo "Clipper is not installed. Exiting..."
-        exit 0
-    fi
-}
-
-# Function to log usage message
-log_usage_message() {
-    echo "Usage:"
-    echo " $1 [options]"
-    echo "Options:"
-    echo "    -y  attempts to continue the installation without prompts."
-    echo "    -h  display this usage message."
-    echo "    -r  uninstall Clipper."
-    echo "    -v  display current and latest version of Clipper."
-}
-
-# Function to clean up temporary files
-cleanup() {
-    rm -rf "$TMP_DIR" || {
-        echo "Failed to cleanup temporary files: $?"
-        exit 1
-    }
-}
-
-log_version_message() {
-    get_latest_version
-    get_installed_version
-
-    if [ -n "$INSTALLED_VERSION" ] && [ -n "$LATEST_VERSION" ]; then
-        echo "$INSTALLED_VERSION is currently installed. (Latest: $LATEST_VERSION)"
-        exit 0
-    fi
-
-    if [ -n "$INSTALLED_VERSION" ]; then
-        echo "$INSTALLED_VERSION is currently installed."
-        exit 0
-    fi
-
-    if [ -n "$LATEST_VERSION" ]; then
-        echo "Clipper $LATEST_VERSION is the latest version. To install, run this script: sh $0 -y"
-        exit 0
-    fi
-
-    echo "Failed to get the version of Clipper. See https://github.com/supitsdu/clipper/releases"
-    exit 1
-}
-
-# Main script execution
-while getopts "yhrv" opt; do
-    case $opt in
-    y) AUTO_CONFIRM=true ;;
-    r) uninstall ;;
-    h) log_usage_message "$0" && exit 0 ;;
-    v) log_version_message ;;
-    *) log_usage_message "$0" && exit 1 ;;
+        }
+        ;;
     esac
+}
+
+# Install or upgrade the binary
+install_binary() {
+    if ! (sudo mv -f "$TMP_BINARY" "$BINARY_DIR/clipper" && sudo chmod +x "$BINARY_DIR/clipper"); then
+        cleanup
+        log "$COLOR_RED" "Failed to install Clipper."
+        exit 1
+    fi
+}
+
+# Prompt the user for confirmation (unless -y is used)
+confirm_action() {
+    if [ -z "$AUTO_CONFIRM" ]; then
+        printf "Do you want to proceed? [y/N] "
+        read -r REPLY
+        case "$REPLY" in
+        [Yy]*) ;;
+        *) exit 0 ;;
+        esac
+        echo # Adds new line for UX purpose only (Temporary)
+    fi
+}
+
+# Remove or clean up binaries
+uninstall() {
+    if ! command -v clipper >/dev/null 2>&1; then
+        log "${STYLE_BOLD}" "Clipper is not installed."
+        log "${COLOR_BLUE}" "Run this script with the '-y' option to install Clipper."
+        exit 0
+    fi
+
+    log "${COLOR_YELLOW}" "Uninstalling $(clipper -v)..."
+
+    if ! sudo rm -f "$(command -v clipper)"; then
+        log "$COLOR_RED" "Failed to uninstall $(clipper -v)."
+        exit 1
+    fi
+
+    cleanup # Clean up any residual temporary files
+
+    log "$COLOR_BLUE" "Clipper has been successfully uninstalled."
+}
+
+# Cleanup temporary files
+cleanup() {
+    rm -rf "$TMP_DIR"
+}
+
+# Check dependencies (curl or wget)
+check_deps() {
+    getter_cmd=""
+
+    for tool in "$@"; do
+        [ -n "$getter_cmd" ] && continue
+        if command -v "$tool" >/dev/null 2>&1; then
+            [ "$GCMD" != "$tool" ] && [ -n "$GCMD" ] && continue
+            getter_cmd="$tool"
+        fi
+    done
+
+    if [ -z "$getter_cmd" ]; then
+        cleanup
+
+        if [ -n "$GCMD" ]; then
+            log "$COLOR_RED" "The selected '$GCMD' is not installed on your system."
+            log "$COLOR_RED" "Please install '$GCMD' or choose another supported option."
+        else
+            log "$COLOR_RED" "Neither 'curl' nor 'wget' is installed. Please install one of them to proceed."
+        fi
+
+        exit 1
+    fi
+
+    if [ -z "$GCMD" ]; then
+        GCMD="$getter_cmd"
+    fi
+}
+
+# --- Main Script Logic ---
+
+# Parse command-line options for -y (auto confirm), -u (uninstall), -g (getter command), and -h (help)
+while getopts ":yhug:" opt; do
+    case "$opt" in
+    u)
+        uninstall
+        exit 0
+        ;;
+    y)
+        AUTO_CONFIRM=true
+        ;;
+    g)
+        shift
+        case "$OPTARG" in
+        "curl") GCMD="curl" ;;
+        "wget") GCMD="wget" ;;
+        *)
+            cleanup
+            log "$COLOR_RED" "Unsupported command: '$OPTARG'. Please use 'curl' or 'wget'."
+            exit 1
+            ;;
+        esac
+        ;;
+    h)
+        log "${COLOR_GREEN}" "\nThis shell script installs or updates Clipper.\n"
+        log "${STYLE_BOLD}" "Usage:${COLOR_RESET}"
+        log "${COLOR_DARK}" "\n $0 ${COLOR_RESET}${COLOR_GREEN}<option> [arguments]${COLOR_RESET}\n"
+        log "${STYLE_BOLD}" "Options:${COLOR_RESET}"
+        log "${COLOR_GREEN}" "\n   -y${COLOR_RESET}\tAutomatically confirm prompts"
+        log "${COLOR_GREEN}" "\n   -u${COLOR_RESET}\tUninstall Clipper"
+        log "${COLOR_GREEN}" "\n   -g${COLOR_RESET}\tSpecify getter command (e.g., 'curl' or 'wget')"
+        log "${COLOR_GREEN}" "\n   -h${COLOR_RESET}\tShow this help message"
+        log "${COLOR_GREEN}" "\nClipper is a lightweight command-line tool for copying contents to the clipboard.\n"
+        exit 0
+        ;;
+    \?) log "$COLOR_RED" "Invalid option: -$OPTARG" && exit 1 ;;
+    :) log "$COLOR_RED" "Option -$OPTARG requires an argument." && exit 1 ;;
+    esac
+    shift
 done
 
-[ -n "$AUTO_CONFIRM" ] || user_input "This script will install Clipper on your system." "proceed"
+# Check dependencies (curl or wget)
+check_deps "curl" "wget"
 
-get_latest_version
-get_installed_version
+# Get latest and installed versions
+latest_version="$(get_latest_version)"
+installed_version="$(get_installed_version)"
 
-if [ -n "$INSTALLED_VERSION" ]; then
-    echo "$INSTALLED_VERSION is already installed."
-    if [ -z "$AUTO_CONFIRM" ]; then
-        if is_newer_version "$LATEST_VERSION" "$INSTALLED_VERSION"; then
-            user_input "A newer version ($LATEST_VERSION) is available." "upgrade"
-        else
-            user_input "You have the latest version installed." "reinstall"
-        fi
+# Check for Clipper and handle installation/update accordingly
+if [ -z "$installed_version" ]; then
+    log "$COLOR_YELLOW" "Installing Clipper...\n"
+    confirm_action
+else
+    if is_newer_version "$latest_version" "$installed_version" || [ "$AUTO_CONFIRM" = "true" ]; then
+        log "$COLOR_YELLOW" "Upgrading Clipper...\n"
+        confirm_action
+    else
+        log "$COLOR_BLUE" "Clipper is already up-to-date (v$installed_version)."
+        log "$COLOR_BLUE" "\n\t✦ No action needed. You're running the latest version! ✦"
+        log "$COLOR_BLUE" "\nIf you'd like to reinstall Clipper, run this script with the '-y' option."
+        exit 0
     fi
 fi
 
-set_binary_url
-download_binary
-make_executable
-install_binary
-verify_installation
+# Create a temporary directory for the download
+TMP_DIR="$(mktemp -d --suffix g.clipper)"
+TMP_BINARY="$TMP_DIR/clipper"
 
-# Clean up temporary directory
+# Download and install the binary
+download_binary "$(set_binary_url)"
+install_binary
+
+# Display success messages
+if is_newer_version "$latest_version" "$installed_version" || [ -n "$installed_version" ]; then
+    log "${STYLE_BOLD}${COLOR_BLUE}" "\nClipper v$latest_version has been successfully installed!"
+    log "${STYLE_BOLD}${COLOR_BLUE}" "\n To get started with Clipper:"
+    log "${STYLE_BOLD}${COLOR_BLUE}" "\n  1. Ensure '/usr/local/bin' is in your PATH environment variable."
+    log "${STYLE_BOLD}${COLOR_BLUE}" "\n  2. Type 'clipper --help' to see available commands and options."
+else
+    log "${STYLE_BOLD}${COLOR_BLUE}" "\nClipper has been updated to v$latest_version."
+fi
+
+log "${STYLE_BOLD}${COLOR_BLUE}" "\nFor detailed documentation and examples, visit the project repository:"
+log "${STYLE_BOLD}${COLOR_BLUE}" "https://github.com/$GITHUB_REPO"
+log "${STYLE_BOLD}${COLOR_BLUE}" "\nClipper is open source and licensed under the MIT License."
+
+# Cleanup temporary files
 cleanup
