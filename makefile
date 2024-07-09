@@ -1,4 +1,6 @@
 # Makefile for building Clipper
+# Any copyright is dedicated to the Public Domain.
+# https://creativecommons.org/publicdomain/zero/1.0/
 
 # Define the output directory for the binaries
 OUT_DIR := bin
@@ -9,7 +11,7 @@ VERSION ?= $(shell git describe --tags --always)  # Get latest tag or commit has
 REPO_URL := github.com/supitsdu/clipper
 
 # Define the build targets for each platform
-.PHONY: all windows linux linux_arm linux_arm64 darwin darwin_arm64 clean checksums test help
+.PHONY: all windows linux linux_arm linux_arm64 darwin darwin_arm64 clean checksums test help version
 
 # Default target: build binaries for all platforms
 all: windows linux linux_arm linux_arm64 darwin darwin_arm64
@@ -23,39 +25,30 @@ endef
 
 # Build binaries for each platform, calling the generic build function with appropriate arguments
 windows: $(OUT_DIR)
-	$(call build,windows,amd64,windows)
+	$(call build,windows,amd64)
 
-# Build binary for Linux (amd64)
 linux: $(OUT_DIR)
-	$(call build,linux,amd64,linux)
+	$(call build,linux,amd64)
 
-# Build binary for Linux (arm)
 linux_arm: $(OUT_DIR)
-	$(call build,linux,arm,linux)
+	$(call build,linux,arm)
 
-# Build binary for Linux (arm64)
 linux_arm64: $(OUT_DIR)
-	$(call build,linux,arm64,linux)
+	$(call build,linux,arm64)
 
-# Build binary for macOS (amd64)
 darwin: $(OUT_DIR)
-	$(call build,darwin,amd64,darwin)
+	$(call build,darwin,amd64)
 
-# Build binary for macOS (arm64)
 darwin_arm64: $(OUT_DIR)
-	$(call build,darwin,arm64,darwin)
+	$(call build,darwin,arm64)
 
 # Generate SHA256 checksums for each binary
 checksums: $(OUT_DIR)
 	@echo "Generating SHA256 checksums..."
-	@for binary in $(WINDOWS_BIN) $(LINUX_BIN) $(LINUX_ARM_BIN) $(LINUX_ARM64_BIN) $(DARWIN_BIN) $(DARWIN_ARM64_BIN); do \
+	@for binary in $(shell ls $(OUT_DIR)); do \
 		sha256sum $(OUT_DIR)/$$binary > $(OUT_DIR)/$$binary.sha256; \
 	done
 	@echo "Checksum files generated successfully."
-
-# Run tests
-test:
-	go test ./...
 
 # Clean the built binaries
 clean:
