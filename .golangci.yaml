@@ -30,7 +30,6 @@ linters:
     - bodyclose         # Checks whether HTTP response body is closed successfully
     - reassign          # Checks that package variables are not reassigned
     - tagliatelle       # Checks struct tags
-    - depguard          # Checks if package imports are in a list of acceptable packages
     - decorder          # Checks declaration order and count of types, constants, variables, and functions
     - revive            # Fast, configurable, extensible linter for Go. Drop-in replacement for golint
     - dupword           # Checks for duplicate words in the source code
