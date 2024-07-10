@@ -1,4 +1,4 @@
-package clipper
+package clipper_test
 
 import (
 	"testing"
@@ -18,7 +18,7 @@ func TestClipboardWriter(t *testing.T) {
 		writer := clipper.DefaultClipboardWriter{}
 
 		// Write some content to the clipboard
-		err := writer.Write(tests.SampleText_32)
+		err := writer.Write(tests.SampleText32)
 		if err != nil {
 			t.Errorf("Error writing to clipboard: %v", err)
 		}
@@ -30,8 +30,8 @@ func TestClipboardWriter(t *testing.T) {
 		}
 
 		// Check the content
-		if clipboardContent != tests.SampleText_32 {
-			t.Errorf("Expected '%s', got '%s'", tests.SampleText_32, clipboardContent)
+		if clipboardContent != tests.SampleText32 {
+			t.Errorf("Expected '%s', got '%s'", tests.SampleText32, clipboardContent)
 		}
 	})
 }

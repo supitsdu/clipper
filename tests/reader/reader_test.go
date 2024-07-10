@@ -69,48 +69,44 @@ func TestIOReader(t *testing.T) {
 	config := &options.Config{}
 	contentReader := reader.ContentReader{Config: config}
 
-	data := "some content"
-	reader := strings.NewReader(data)
+	reader := strings.NewReader(tests.SampleText32)
 
 	result, err := contentReader.IOReader(reader, "")
 	assert.NoError(t, err)
-	assert.Equal(t, data, result)
+	assert.Equal(t, tests.SampleText32, result)
 }
 
 func TestCreateContent(t *testing.T) {
-	t.Run("Without Content Formats", func(tt *testing.T) {
+	t.Run("Without Content Formats", func(t *testing.T) {
 		config := &options.Config{ShouldFormat: false}
 		contentReader := reader.ContentReader{Config: config}
 
-		data := "raw content"
-		result, err := contentReader.CreateContent("", []byte(data))
-		assert.NoError(tt, err)
-		assert.Equal(tt, data, result)
+		result, err := contentReader.CreateContent("", []byte(tests.SampleText32))
+		assert.NoError(t, err)
+		assert.Equal(t, tests.SampleText32, result)
 	})
 
-	t.Run("Content with HTML5 format", func(tt *testing.T) {
-		config := &options.Config{ShouldFormat: true, Html: true}
+	t.Run("Content with HTML5 format", func(t *testing.T) {
+		config := &options.Config{ShouldFormat: true, HTML: true}
 		contentReader := reader.ContentReader{Config: config}
 
-		data := "raw content"
-		result, err := contentReader.CreateContent("", []byte(data))
-		assert.NoError(tt, err)
-		assert.Equal(tt, "<code>\nraw content\n</code>", result)
+		result, err := contentReader.CreateContent("", []byte(tests.SampleText32))
+		assert.NoError(t, err)
+		assert.Equal(t, "<code>\n"+tests.SampleText32+"\n</code>", result)
 	})
 
-	t.Run("Content with Markdown format", func(tt *testing.T) {
+	t.Run("Content with Markdown format", func(t *testing.T) {
 		config := &options.Config{ShouldFormat: true, Markdown: true}
 		contentReader := reader.ContentReader{Config: config}
 
-		data := "raw content"
-		result, err := contentReader.CreateContent("", []byte(data))
+		result, err := contentReader.CreateContent("", []byte(tests.SampleText32))
 		assert.NoError(t, err)
-		assert.Equal(t, "```\nraw content\n```", result)
+		assert.Equal(t, "```\n"+tests.SampleText32+"\n```", result)
 	})
 }
 
 func TestJoinAll(t *testing.T) {
-	t.Run("join contents with a new line", func(tt *testing.T) {
+	t.Run("join contents with a new line", func(t *testing.T) {
 		config := &options.Config{}
 		contentReader := reader.ContentReader{Config: config}
 
@@ -118,10 +114,10 @@ func TestJoinAll(t *testing.T) {
 		expected := "content1\ncontent2\ncontent3\n"
 		result := contentReader.JoinAll(results)
 
-		assert.Equal(tt, expected, result)
+		assert.Equal(t, expected, result)
 	})
 
-	t.Run("ignore empty contents", func(tt *testing.T) {
+	t.Run("ignore empty contents", func(t *testing.T) {
 		config := &options.Config{}
 		contentReader := reader.ContentReader{Config: config}
 
@@ -129,6 +125,6 @@ func TestJoinAll(t *testing.T) {
 		expected := "content2\n"
 		result := contentReader.JoinAll(results)
 
-		assert.Equal(tt, expected, result)
+		assert.Equal(t, expected, result)
 	})
 }
