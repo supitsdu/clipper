@@ -48,7 +48,7 @@ jobs:
         with:
           version: v1.59.1
           # Specify the output format for the linting report
-          args: --out-format json
+          args: --out-format=checkstyle:golangci-lint-report.yml,github-actions
         # Ensures lint step is only attempted if the test step was successful
         continue-on-error: false
 
@@ -57,6 +57,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: golangci-lint-report
-          path: golangci-lint-report.json
+          path: golangci-lint-report.yml
         # Ensures artifact upload step is only attempted if the lint step was successful
         continue-on-error: false
