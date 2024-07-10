@@ -1,0 +1,62 @@
+# This workflow will build, test, and lint a Golang project.
+# For more information see:
+# - https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+# - https://golangci-lint.run/usage/install/#github-action
+
+name: Go Standards (Build, Test & Lint)
+
+on:
+  push:
+    branches: ["main", "ci", "test"]
+  pull_request:
+    branches: ["main", "ci", "test"]
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-lint:
+    # This job runs on the latest Ubuntu environment
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Go environment
+      - name: Set up Go v1.22.3
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.22.3"
+
+      # Step 3: Build the project
+      - name: Build the project
+        run: go build -v ./...
+        # Ensures build step is only attempted if the repository was checked out successfully
+        continue-on-error: false
+
+      # Step 4: Test the project
+      - name: Run tests
+        run: go test -v ./... -test.short
+        # Ensures test step is only attempted if the build step was successful
+        continue-on-error: false
+
+      # Step 5: Run golangci-lint
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.59
+          # Specify the output format for the linting report
+          args: --out-format json > golangci-lint-report.json
+        # Ensures lint step is only attempted if the test step was successful
+        continue-on-error: false
+
+      # Step 6: Upload golangci-lint report as an artifact
+      - name: Upload golangci-lint report
+        uses: actions/upload-artifact@v3
+        with:
+          name: golangci-lint-report
+          path: golangci-lint-report.json
+        # Ensures artifact upload step is only attempted if the lint step was successful
+        continue-on-error: false
