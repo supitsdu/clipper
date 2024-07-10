@@ -26,7 +26,7 @@ jobs:
 
       # Step 2: Set up Go environment
       - name: Set up Go v1.22.3
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: "1.22.3"
 
@@ -46,15 +46,15 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.59
+          version: v1.59.1
           # Specify the output format for the linting report
-          args: --out-format json > golangci-lint-report.json
+          args: --out-format json
         # Ensures lint step is only attempted if the test step was successful
         continue-on-error: false
 
       # Step 6: Upload golangci-lint report as an artifact
       - name: Upload golangci-lint report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: golangci-lint-report
           path: golangci-lint-report.json
