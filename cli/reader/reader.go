@@ -42,14 +42,14 @@ func (cr ContentReader) ReadFilesAsync(paths []string) ([]string, error) {
 	errChan := make(chan error, len(paths)) // Channel to capture errors from goroutines
 	results := make([]string, len(paths))   // Slice to store results
 
-	var wg sync.WaitGroup
-	var mu sync.Mutex
+	var waitGroup sync.WaitGroup
+	var mutext sync.Mutex
 
-	for i, filepath := range paths {
-		wg.Add(1)
+	for index, filepath := range paths {
+		waitGroup.Add(1)
 
-		go func(i int, filepath string) { // Goroutine to read a single file.
-			defer wg.Done()
+		go func(index int, filepath string) { // Goroutine to read a single file.
+			defer waitGroup.Done()
 			content, err := cr.ReadFile(filepath)
 
 			if err != nil {
@@ -58,14 +58,14 @@ func (cr ContentReader) ReadFilesAsync(paths []string) ([]string, error) {
 				return
 			}
 
-			mu.Lock()
-			defer mu.Unlock()    // Ensure safe concurrent access to 'results'.
-			results[i] = content // Store the content in the results slice.
-		}(i, filepath)
+			mutext.Lock()
+			defer mutext.Unlock()    // Ensure safe concurrent access to 'results'.
+			results[index] = content // Store the content in the results slice.
+		}(index, filepath)
 	}
 
 	go func() {
-		wg.Wait() // Wait for all reading goroutines to complete.
+		waitGroup.Wait() // Wait for all reading goroutines to complete.
 		close(errChan)
 	}()
 
@@ -87,13 +87,13 @@ func (cr ContentReader) ReadFilesAsync(paths []string) ([]string, error) {
 // JoinAll aggregates the content from the provided results and returns it as a single string.
 // It combines the content of all readers into a single string with newline separators.
 func (cr ContentReader) JoinAll(results []string) string {
-	var sb strings.Builder
+	var strBuilder strings.Builder
 	for _, content := range results {
 		if content != "" { // Ensure non-empty content is aggregated.
-			sb.WriteString(content + "\n")
+			strBuilder.WriteString(content + "\n")
 		}
 	}
-	return sb.String()
+	return strBuilder.String()
 }
 
 // ReadFile reads and formats content from a single file.
@@ -159,7 +159,7 @@ func (cr ContentReader) CreateContent(filepath string, data []byte) (string, err
 // Format formats the content based on configuration options (HTML, Markdown, MimeType).
 // It returns the formatted content as a string and an error if formatting fails.
 func (cr ContentReader) Format(filepath string, data []byte) (string, error) {
-	var sb strings.Builder
+	var strBuilder strings.Builder
 
 	mime := mimetype.Detect(data)
 	mimeType := mime.String()
@@ -173,27 +173,28 @@ func (cr ContentReader) Format(filepath string, data []byte) (string, error) {
 	if cr.Config.MimeType {
 		mimeType := fmt.Sprintf("%s (%s)\n", filepath, mimeType)
 
-		if cr.Config.Html || cr.Config.Markdown {
-			sb.WriteString("<!--\n" + mimeType + "-->\n")
+		if cr.Config.HTML || cr.Config.Markdown {
+			strBuilder.WriteString("<!--\n" + mimeType + "-->\n")
 		} else {
-			sb.WriteString(mimeType)
+			strBuilder.WriteString(mimeType)
 		}
 	}
 
 	// Format the content based on the configuration.
-	if cr.Config.Html {
-		sb.WriteString(fmt.Sprintf("<code>\n%s\n</code>", content))
-	} else if cr.Config.Markdown {
-		sb.WriteString(fmt.Sprintf("```\n%s\n```", content))
-	} else if cr.Config.LineNumbers {
+	switch {
+	case cr.Config.HTML:
+		strBuilder.WriteString(fmt.Sprintf("<code>\n%s\n</code>", content))
+	case cr.Config.Markdown:
+		strBuilder.WriteString(fmt.Sprintf("```\n%s\n```", content))
+	case cr.Config.LineNumbers:
 		lines := strings.Split(content, "\n")
 
-		for i, line := range lines {
-			sb.WriteString(fmt.Sprintf("%d: %s\n", i+1, line))
+		for index, line := range lines {
+			strBuilder.WriteString(fmt.Sprintf("%d: %s\n", index+1, line))
 		}
-	} else {
-		sb.WriteString(content)
+	default:
+		strBuilder.WriteString(content)
 	}
 
-	return sb.String(), nil
+	return strBuilder.String(), nil
 }

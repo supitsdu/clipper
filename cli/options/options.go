@@ -10,7 +10,7 @@ import (
 type Config struct {
 	Text         string
 	FilePaths    []string
-	Html         bool
+	HTML         bool
 	Markdown     bool
 	MimeType     bool
 	LineNumbers  bool
@@ -18,13 +18,13 @@ type Config struct {
 	ShowVersion  bool
 }
 
-// Package-level variables for version information (set at build time or default)
+// Package-level variables for version information (set at build time or default).
 var (
-	Version       = "dev"        // Default for development builds
-	BuildMetadata = "git/source" // Default for development builds
+	Version       = "dev"        // Default for development builds.
+	BuildMetadata = "git/source" // Default for development builds.
 )
 
-// GetVersion formats the version string for display
+// GetVersion formats the version string for display.
 func GetVersion() string {
 	versionStr := strings.TrimSpace(Version)
 
@@ -60,7 +60,7 @@ func ParseFlags() *Config {
 	return &Config{
 		Text:         *text,
 		FilePaths:    flag.Args(),
-		Html:         *htmlWrap,
+		HTML:         *htmlWrap,
 		Markdown:     *markdownWrap,
 		MimeType:     *mimeType,
 		LineNumbers:  *lineNumbers,

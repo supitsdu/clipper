@@ -22,3 +22,6 @@ go.work
 
 # Binary files
 bin/
+
+# Report files
+*-report.yml

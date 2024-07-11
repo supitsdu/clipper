@@ -1,0 +1,54 @@
+# This workflow will build, test, and lint a Golang project.
+# For more information see:
+# - https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+# - https://golangci-lint.run/usage/install/#github-action
+
+name: Go Standards (Build, Test & Lint)
+
+on:
+  push:
+    branches: ["main", "ci", "test"]
+  pull_request:
+    branches: ["main", "ci", "test"]
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-lint:
+    # This job runs on the latest Ubuntu environment
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Go environment
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      # Step 3: Build the project
+      - name: Build the project
+        run: go build -v ./...
+
+      # Step 4: Test the project
+      - name: Run tests
+        run: go test -v ./...
+
+      # Step 5: Run golangci-lint
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.59.1
+          # Specify the output format for the linting report
+          args: --out-format=checkstyle:golangci-lint-report.yml,github-actions
+
+      # Step 6: Upload golangci-lint report as an artifact
+      - name: Upload golangci-lint report
+        uses: actions/upload-artifact@v4
+        with:
+          name: golangci-lint-report
+          path: golangci-lint-report.yml
