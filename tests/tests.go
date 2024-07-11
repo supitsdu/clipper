@@ -49,3 +49,8 @@ func CreateTempFile(t *testing.T, content string) (*os.File, error) {
 
 	return file, nil
 }
+
+// IsCIEnvironment checks if the code is running in a CI environment.
+func IsCIEnvironment() bool {
+	return os.Getenv("GITHUB_ACTIONS") == "true"
+}

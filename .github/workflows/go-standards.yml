@@ -33,14 +33,10 @@ jobs:
       # Step 3: Build the project
       - name: Build the project
         run: go build -v ./...
-        # Ensures build step is only attempted if the repository was checked out successfully
-        continue-on-error: false
 
       # Step 4: Test the project
       - name: Run tests
-        run: go test -v ./... -test.short
-        # Ensures test step is only attempted if the build step was successful
-        continue-on-error: false
+        run: go test -v ./...
 
       # Step 5: Run golangci-lint
       - name: Run golangci-lint
@@ -49,8 +45,6 @@ jobs:
           version: v1.59.1
           # Specify the output format for the linting report
           args: --out-format=checkstyle:golangci-lint-report.yml,github-actions
-        # Ensures lint step is only attempted if the test step was successful
-        continue-on-error: false
 
       # Step 6: Upload golangci-lint report as an artifact
       - name: Upload golangci-lint report
@@ -58,5 +52,3 @@ jobs:
         with:
           name: golangci-lint-report
           path: golangci-lint-report.yml
-        # Ensures artifact upload step is only attempted if the lint step was successful
-        continue-on-error: false
