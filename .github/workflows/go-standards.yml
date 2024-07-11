@@ -25,10 +25,10 @@ jobs:
         uses: actions/checkout@v4
 
       # Step 2: Set up Go environment
-      - name: Set up Go v1.22.3
+      - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.22.3"
+          go-version: stable
 
       # Step 3: Build the project
       - name: Build the project
