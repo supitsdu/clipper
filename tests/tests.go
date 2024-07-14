@@ -81,5 +81,5 @@ func IsCIEnvironment() bool {
 type FaultyReader struct{}
 
 func (fr *FaultyReader) Read(p []byte) (n int, err error) {
-	return 0, io.ErrUnexpectedEOF
+	return len(p), io.ErrUnexpectedEOF
 }

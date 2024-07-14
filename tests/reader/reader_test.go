@@ -69,6 +69,7 @@ func TestReadAll(t *testing.T) {
 	})
 }
 
+//nolint:funlen // It cannot be shorter
 func TestReadable(t *testing.T) {
 	config := &options.Config{}
 	contentReader := reader.ContentReader{Config: config}
@@ -170,7 +171,6 @@ func TestIOReader(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, "", result)
 	})
-
 }
 
 func TestCreateContent(t *testing.T) {
