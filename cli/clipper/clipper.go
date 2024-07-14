@@ -21,17 +21,17 @@ func (c DefaultClipboardWriter) Write(content string) error {
 }
 
 // Run executes the core logic of the Clipper tool.
-func Run(reader reader.ContentReader, writer ClipboardWriter) (string, error) {
+func Run(reader reader.ContentReader, writer ClipboardWriter) (int, error) {
 	// Aggregate the content from the provided sources.
 	content, err := reader.ReadAll()
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 
 	// Write the parsed content to the provided clipboard.
 	if err = writer.Write(content); err != nil {
-		return "", fmt.Errorf("copying content to clipboard: %w", err)
+		return 0, fmt.Errorf("failed copying to clipboard %w", err)
 	}
 
-	return "Updated clipboard successfully. Ready to paste!", nil
+	return len(content), nil
 }

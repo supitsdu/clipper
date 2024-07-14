@@ -16,20 +16,35 @@ type ContentReader struct {
 	Config *options.Config // Configuration options for content reading and formatting.
 }
 
-// ReadAll reads content from multiple files concurrently or from standard input if no files are specified.
-// It returns the aggregated content as a single string.
+// ReadAll reads content from multiple sources: command-line argument, standard input (stdin),
+// and specified files. It aggregates the content into a single string.
+// It returns the aggregated content as a string and any error encountered during the process.
 func (cr ContentReader) ReadAll() (string, error) {
-	paths := cr.Config.FilePaths
+	var results []string
 
-	// If no file paths are specified, read from standard input.
-	if len(paths) == 0 {
-		return cr.IOReader(os.Stdin, "")
+	// Add text from command-line argument, if provided
+	if len(cr.Config.Text) > 0 {
+		results = append(results, cr.Config.Text)
 	}
 
-	// Read content from all specified files concurrently.
-	results, err := cr.ReadFilesAsync(paths)
+	// Read from stdin if data is available
+	if stat, _ := os.Stdin.Stat(); (stat.Mode() & os.ModeCharDevice) == 0 {
+		stdinContents, err := cr.IOReader(os.Stdin, "")
+		if err != nil {
+			return "", err
+		}
+		if len(stdinContents) > 0 {
+			results = append(results, stdinContents)
+		}
+	}
+
+	// Read from specified files asynchronously
+	fileContents, err := cr.ReadFilesAsync(cr.Config.FilePaths)
 	if err != nil {
 		return "", err
+	}
+	if len(fileContents) > 0 {
+		results = append(results, fileContents...)
 	}
 
 	// Join all results into a single string.
@@ -54,7 +69,7 @@ func (cr ContentReader) ReadFilesAsync(paths []string) ([]string, error) {
 
 			if err != nil {
 				// Send the error to the error channel and return early.
-				errChan <- fmt.Errorf("error reading file '%s': %w", filepath, err)
+				errChan <- fmt.Errorf("reading file '%s': %w", filepath, err)
 				return
 			}
 
@@ -124,12 +139,12 @@ func (cr ContentReader) Readable(filePath string) error {
 
 	// Check if it's a regular file (not a directory or other type).
 	if !fileInfo.Mode().IsRegular() {
-		return fmt.Errorf("path is not of a regular file, perhaps a directory or other type")
+		return fmt.Errorf("reading from directories is not currently supported")
 	}
 
 	// Check if it's readable.
 	if fileInfo.Mode().Perm()&0400 == 0 { // 0400 corresponds to read permission.
-		return fmt.Errorf("you don't have access to read the file")
+		return fmt.Errorf("permission denied")
 	}
 
 	return nil
@@ -141,6 +156,11 @@ func (cr ContentReader) IOReader(source io.Reader, filepath string) (string, err
 	data, err := io.ReadAll(source)
 	if err != nil {
 		return "", err
+	}
+
+	// Check if stdin is empty
+	if len(data) == 0 {
+		return "", nil
 	}
 
 	return cr.CreateContent(filepath, data)

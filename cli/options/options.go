@@ -47,8 +47,8 @@ func ParseFlags() *Config {
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Clipper is a lightweight command-line tool for copying contents to the clipboard.\n")
 		fmt.Fprintf(flag.CommandLine.Output(), "\nUsage:\n")
-		fmt.Fprintf(flag.CommandLine.Output(), "  clipper [arguments] [file ...]\n")
-		fmt.Fprintf(flag.CommandLine.Output(), "\nArguments:\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "\n clipper [arguments] [file ...]\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "\nArguments:\n\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(flag.CommandLine.Output(), "\nIf no file or text is provided, reads from standard input.\n")
 	}
