@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"io"
 	"os"
 	"testing"
 )
@@ -50,7 +51,35 @@ func CreateTempFile(t *testing.T, content string) (*os.File, error) {
 	return file, nil
 }
 
+// CreateTempDir creates a temporary directory for testing purposes.
+// It returns the path to the created directory and an error if any.
+func CreateTempDir(t *testing.T, dirname string) (string, error) {
+	t.Helper()
+
+	// Create a temporary directory
+	dir, err := os.MkdirTemp(t.TempDir(), dirname)
+	if err != nil {
+		return "", err
+	}
+
+	// Ensure the directory is cleaned up after the test
+	t.Cleanup(func() {
+		if err := os.RemoveAll(dir); err != nil {
+			t.Fatalf("Failed to clean up temporary directory: %s", err)
+		}
+	})
+
+	return dir, nil
+}
+
 // IsCIEnvironment checks if the code is running in a CI environment.
 func IsCIEnvironment() bool {
 	return os.Getenv("GITHUB_ACTIONS") == "true"
+}
+
+// faultyReader simulates a reader that always returns an error.
+type FaultyReader struct{}
+
+func (fr *FaultyReader) Read(p []byte) (n int, err error) {
+	return 0, io.ErrUnexpectedEOF
 }
