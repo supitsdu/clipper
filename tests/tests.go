@@ -4,6 +4,8 @@ import (
 	"io"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const SampleText32 = "Mocking Bird! Just A Sample Text."
@@ -34,42 +36,17 @@ func ReplaceStdin(t *testing.T) (*os.File, *os.File) {
 }
 
 // createTempFile creates a temporary file for testing purposes and writes the given content to it.
-func CreateTempFile(t *testing.T, content string) (*os.File, error) {
+func CreateTempFile(t *testing.T, content string) *os.File {
 	t.Helper()
 	// Create a temporary file
 	file, err := os.CreateTemp(t.TempDir(), "testfile")
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 
 	// Write the provided content to the temporary file
 	_, err = file.WriteString(content)
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 
-	return file, nil
-}
-
-// CreateTempDir creates a temporary directory for testing purposes.
-// It returns the path to the created directory and an error if any.
-func CreateTempDir(t *testing.T, dirname string) (string, error) {
-	t.Helper()
-
-	// Create a temporary directory
-	dir, err := os.MkdirTemp(t.TempDir(), dirname)
-	if err != nil {
-		return "", err
-	}
-
-	// Ensure the directory is cleaned up after the test
-	t.Cleanup(func() {
-		if err := os.RemoveAll(dir); err != nil {
-			t.Fatalf("Failed to clean up temporary directory: %s", err)
-		}
-	})
-
-	return dir, nil
+	return file
 }
 
 // IsCIEnvironment checks if the code is running in a CI environment.
