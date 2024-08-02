@@ -1,8 +1,11 @@
 package tests
 
 import (
+	"io"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const SampleText32 = "Mocking Bird! Just A Sample Text."
@@ -33,24 +36,27 @@ func ReplaceStdin(t *testing.T) (*os.File, *os.File) {
 }
 
 // createTempFile creates a temporary file for testing purposes and writes the given content to it.
-func CreateTempFile(t *testing.T, content string) (*os.File, error) {
+func CreateTempFile(t *testing.T, content string) *os.File {
 	t.Helper()
 	// Create a temporary file
 	file, err := os.CreateTemp(t.TempDir(), "testfile")
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 
 	// Write the provided content to the temporary file
 	_, err = file.WriteString(content)
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 
-	return file, nil
+	return file
 }
 
 // IsCIEnvironment checks if the code is running in a CI environment.
 func IsCIEnvironment() bool {
 	return os.Getenv("GITHUB_ACTIONS") == "true"
+}
+
+// faultyReader simulates a reader that always returns an error.
+type FaultyReader struct{}
+
+func (*FaultyReader) Read(p []byte) (n int, err error) {
+	return len(p), io.ErrUnexpectedEOF
 }

@@ -45,12 +45,17 @@ func ParseFlags() *Config {
 	showVersion := flag.Bool("v", false, "Show the current version of the clipper tool")
 
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Clipper is a lightweight command-line tool for copying contents to the clipboard.\n")
-		fmt.Fprintf(flag.CommandLine.Output(), "\nUsage:\n")
-		fmt.Fprintf(flag.CommandLine.Output(), "  clipper [arguments] [file ...]\n")
-		fmt.Fprintf(flag.CommandLine.Output(), "\nArguments:\n")
+		fmt.Fprintln(flag.CommandLine.Output(), "Clipper is a lightweight command-line tool for copying contents to the clipboard.")
+		fmt.Fprintln(flag.CommandLine.Output())
+		fmt.Fprintln(flag.CommandLine.Output(), "Usage:")
+		fmt.Fprintln(flag.CommandLine.Output())
+		fmt.Fprintln(flag.CommandLine.Output(), "  clipper [arguments] [file ...]")
+		fmt.Fprintln(flag.CommandLine.Output())
+		fmt.Fprintln(flag.CommandLine.Output(), "Arguments:")
+		fmt.Fprintln(flag.CommandLine.Output())
 		flag.PrintDefaults()
-		fmt.Fprintf(flag.CommandLine.Output(), "\nIf no file or text is provided, reads from standard input.\n")
+		fmt.Fprintln(flag.CommandLine.Output())
+		fmt.Fprintln(flag.CommandLine.Output(), "If no file or text is provided, reads from standard input.")
 	}
 
 	flag.CommandLine.SetOutput(os.Stderr)
