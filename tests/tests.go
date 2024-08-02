@@ -57,6 +57,6 @@ func IsCIEnvironment() bool {
 // faultyReader simulates a reader that always returns an error.
 type FaultyReader struct{}
 
-func (fr *FaultyReader) Read(p []byte) (n int, err error) {
+func (*FaultyReader) Read(p []byte) (n int, err error) {
 	return len(p), io.ErrUnexpectedEOF
 }
