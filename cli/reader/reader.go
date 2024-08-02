@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/gabriel-vasile/mimetype"
+	"github.com/supitsdu/clipper/cli/console"
 	"github.com/supitsdu/clipper/cli/options"
 )
 
@@ -28,7 +29,7 @@ func (cr ContentReader) ReadAll() (string, error) {
 	}
 
 	// Read from stdin if data is available
-	if stat, _ := os.Stdin.Stat(); (stat.Mode() & os.ModeCharDevice) == 0 {
+	if stat, err := os.Stdin.Stat(); err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
 		stdinContents, err := cr.IOReader(os.Stdin, "")
 		if err != nil {
 			return "", err
@@ -43,9 +44,8 @@ func (cr ContentReader) ReadAll() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if len(fileContents) > 0 {
-		results = append(results, fileContents...)
-	}
+
+	results = append(results, fileContents...)
 
 	// Join all results into a single string.
 	return cr.JoinAll(results), nil
@@ -134,17 +134,17 @@ func (cr ContentReader) Readable(filePath string) error {
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		// File doesn't exist or can't be accessed.
-		return fmt.Errorf("file does not exist or can't be accessed")
+		return console.ErrFileNotFound
 	}
 
 	// Check if it's a regular file (not a directory or other type).
 	if !fileInfo.Mode().IsRegular() {
-		return fmt.Errorf("reading from directories is not currently supported")
+		return console.ErrReadingDirectories
 	}
 
 	// Check if it's readable.
 	if fileInfo.Mode().Perm()&0400 == 0 { // 0400 corresponds to read permission.
-		return fmt.Errorf("permission denied")
+		return console.ErrPermissionDenied
 	}
 
 	return nil

@@ -6,17 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/supitsdu/clipper/cli/console"
 	"github.com/supitsdu/clipper/cli/options"
 	"github.com/supitsdu/clipper/cli/reader"
 	"github.com/supitsdu/clipper/tests"
-)
-
-const (
-	ErrFileNotFound       = "file does not exist or can't be accessed"
-	ErrReadingDirectories = "reading from directories is not currently supported"
-	ErrPermissionDenied   = "permission denied"
 )
 
 func TestReadAll(t *testing.T) {
@@ -53,8 +47,8 @@ func TestReadAll(t *testing.T) {
 		expectedResults := strings.Join(fileContents, "\n") + "\n"
 		var filePaths []string
 
-		for index := 0; index < 3; index++ {
-			file := tests.CreateTempFile(t, fileContents[index])
+		for _, content := range fileContents {
+			file := tests.CreateTempFile(t, content)
 
 			filePaths = append(filePaths, file.Name())
 		}
@@ -82,8 +76,7 @@ func TestReadable(t *testing.T) {
 
 	t.Run("file does not exist", func(t *testing.T) {
 		err := contentReader.Readable("nonexistentfile")
-		require.Error(t, err)
-		assert.EqualError(t, err, ErrFileNotFound)
+		require.ErrorIs(t, err, console.ErrFileNotFound)
 	})
 
 	t.Run("path is a directory", func(t *testing.T) {
@@ -92,44 +85,37 @@ func TestReadable(t *testing.T) {
 		require.NoError(t, err)
 
 		err = contentReader.Readable(dir)
-		require.Error(t, err)
-		assert.EqualError(t, err, ErrReadingDirectories)
+		require.ErrorIs(t, err, console.ErrReadingDirectories)
 	})
 
 	t.Run("file is not readable", func(t *testing.T) {
 		file := tests.CreateTempFile(t, "content")
 
 		// Remove read permissions
-		if err := os.Chmod(file.Name(), 0o200); err != nil { // 0200 corresponds to write-only permission.
-			t.Fatalf("Failed to change file permissions: %s", err)
-		}
+		err := os.Chmod(file.Name(), 0o200) // 0200 corresponds to write-only permission.
+		require.NoError(t, err, "Failed to change file permissions")
 
-		err := contentReader.Readable(file.Name())
-		require.Error(t, err)
-		assert.EqualError(t, err, ErrPermissionDenied)
+		err = contentReader.Readable(file.Name())
+		require.ErrorIs(t, err, console.ErrPermissionDenied)
 
 		// Restore read permissions for cleanup
-		if err := os.Chmod(file.Name(), 0o600); err != nil { // 0600 corresponds to read-write permissions.
-			t.Fatalf("Failed to restore file permissions: %s", err)
-		}
+		err = os.Chmod(file.Name(), 0o600) // 0600 corresponds to read-write permissions.
+		require.NoError(t, err, "Failed to restore file permissions")
 	})
 
 	t.Run("file is readable after fixing permissions", func(t *testing.T) {
 		file := tests.CreateTempFile(t, "content")
 
 		// Remove read permissions
-		if err := os.Chmod(file.Name(), 0o200); err != nil { // 0200 corresponds to write-only permission.
-			t.Fatalf("Failed to change file permissions: %s", err)
-		}
+		err := os.Chmod(file.Name(), 0o200) // 0200 corresponds to write-only permission.
+		require.NoError(t, err, "Failed to change file permissions")
 
-		err := contentReader.Readable(file.Name())
+		err = contentReader.Readable(file.Name())
 		require.Error(t, err)
-		assert.EqualError(t, err, ErrPermissionDenied)
 
 		// Restore read permissions
-		if err := os.Chmod(file.Name(), 0o600); err != nil { // 0600 corresponds to read-write permissions.
-			t.Fatalf("Failed to restore file permissions: %s", err)
-		}
+		err = os.Chmod(file.Name(), 0o600) // 0600 corresponds to read-write permissions.
+		require.NoError(t, err, "Failed to restore file permissions.")
 
 		err = contentReader.Readable(file.Name())
 		require.NoError(t, err)
@@ -151,14 +137,14 @@ func TestIOReader(t *testing.T) {
 		reader := strings.NewReader("")
 		result, err := contentReader.IOReader(reader, "")
 		require.NoError(t, err)
-		require.Equal(t, "", result)
+		require.Empty(t, result)
 	})
 
 	t.Run("returns error for faulty reader", func(t *testing.T) {
 		reader := io.NopCloser(&tests.FaultyReader{})
 		result, err := contentReader.IOReader(reader, "")
 		require.Error(t, err)
-		require.Equal(t, "", result)
+		require.Empty(t, result)
 	})
 }
 
