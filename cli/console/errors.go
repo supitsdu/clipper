@@ -1,9 +1,9 @@
 package console
 
-import "fmt"
+import "errors"
 
 var (
-	ErrFileNotFound       = fmt.Errorf("file does not exist or can't be accessed")
-	ErrReadingDirectories = fmt.Errorf("reading from directories is not currently supported")
-	ErrPermissionDenied   = fmt.Errorf("permission denied")
+	ErrFileNotFound       = errors.New("file does not exist or can't be accessed")
+	ErrReadingDirectories = errors.New("reading from directories is not currently supported")
+	ErrPermissionDenied   = errors.New("permission denied")
 )
